@@ -3,16 +3,12 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  console.log('CORS ENABLED - OPEN MODE');
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'https://warren-dashboard-1nwa5700f-julians-projects-1c9cc617.vercel.app',
-      /^https:\/\/.*\.vercel\.app$/,
-    ],
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    origin: true,
     credentials: true,
-  })
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }
