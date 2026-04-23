@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Symbol {
+  symbol      String          @id
+  name        String
+  sector      String
+  industry    String
+  country     String?         @default("US")
+  indexTag    String?         @default("SP500")
+  adrPct      Float?          @default(0)
+  website     String?
+  logoUrl     String?
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  snapshot    SymbolSnapshot?
+}
+
+model SymbolSnapshot {
+  symbol          String   @id
+  name            String
+  sector          String
+  industry        String
+  country         String? @default("US")
+  indexTag        String? @default("SP500")
+  adrPct          Float?  @default(0)
+  website         String?
+  logoUrl         String?
+  price           Float
+  changePct       Float
+  marketCap       Float
+  rsScore         Float
+  rsDelta1d       Float?
+  rsDelta20d      Float?
+  rsi14           Float?
+  volDevPct5      Float
+  distEma20Pct    Float?
+  distEma50Pct    Float?
+  distEma200Pct   Float?
+  dist52wPct      Float
+  volRelative     Float
+  unusualVol      Boolean
+  warrenScore     Float
+  aboveEma20      Boolean
+  aboveEma50      Boolean
+  aboveEma200     Boolean
+  plus25FromLow   Boolean
+  volGt08         Boolean
+  near52wHigh     Boolean
+  rsRank4w        Int?
+  rsRank3w        Int?
+  rsRank2w        Int?
+  rsRank1w        Int?
+  rsRankNow       Int?
+  vol5Vs1yRatio   Float?
+  updatedAt       DateTime @default(now()) @updatedAt
+  symbolRef       Symbol   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([sector])
+  @@index([marketCap])
+  @@index([rsScore])
+  @@index([warrenScore])
+  @@index([updatedAt])
+  @@index([near52wHigh])
+  @@index([country])
+  @@index([indexTag])
+}
