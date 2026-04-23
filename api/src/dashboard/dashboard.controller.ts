@@ -2,7 +2,10 @@ import { BadGatewayException, Controller, Get, Query } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { HeatmapService } from './heatmap.service';
 
-function parseList(input?: string, mode: 'upper' | 'raw' = 'raw'): string[] | undefined {
+function parseList(
+  input?: string,
+  mode: 'upper' | 'raw' = 'raw',
+): string[] | undefined {
   if (!input) return undefined;
   const list = input
     .split(',')
@@ -14,7 +17,7 @@ function parseList(input?: string, mode: 'upper' | 'raw' = 'raw'): string[] | un
 
 function parseSymbols(input?: string): string[] | undefined {
   if (!input) return undefined;
-    return parseList(input, 'upper');
+  return parseList(input, 'upper');
 }
 
 @Controller('dashboard')

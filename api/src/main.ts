@@ -6,7 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use((req: Request, res: Response, next: NextFunction) => {
-    const origin = req.headers.origin as string | undefined;
+    const origin = req.headers.origin;
 
     console.log('RAW CORS HIT:', req.method, req.url, origin);
 
@@ -18,10 +18,13 @@ async function bootstrap() {
 
     res.header('Vary', 'Origin');
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    res.header(
+      'Access-Control-Allow-Methods',
+      'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    );
     res.header(
       'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization',
     );
 
     if (req.method === 'OPTIONS') {

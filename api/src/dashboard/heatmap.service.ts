@@ -22,7 +22,10 @@ export class HeatmapService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getHeatmap(forceRefresh = false, symbols?: string[]): Promise<HeatmapResponse> {
+  async getHeatmap(
+    forceRefresh = false,
+    symbols?: string[],
+  ): Promise<HeatmapResponse> {
     const key = symbols?.length ? symbols.join(',') : '__all__';
     const cached = this.cache.get(key);
     if (!forceRefresh && cached && Date.now() - cached.at < HEATMAP_CACHE_MS) {
@@ -52,7 +55,9 @@ export class HeatmapService {
     const snapshotRows = await this.prisma.symbolSnapshot.findMany({
       where: {
         marketCap: { gte: MIN_CAP_USD, lte: MAX_CAP_USD },
-        ...(symbols?.length ? { symbol: { in: symbols.map((item) => item.toUpperCase()) } } : {}),
+        ...(symbols?.length
+          ? { symbol: { in: symbols.map((item) => item.toUpperCase()) } }
+          : {}),
       },
       orderBy: [{ marketCap: 'desc' }, { symbol: 'asc' }],
       take: HEATMAP_ROW_LIMIT,
@@ -77,7 +82,11 @@ export class HeatmapService {
 
     const preferred = snapshotRows.filter((row) => {
       const adrPct = Number(row.adrPct ?? 0);
-      return Number.isFinite(adrPct) && adrPct >= MIN_ADR_PCT && adrPct <= MAX_ADR_PCT;
+      return (
+        Number.isFinite(adrPct) &&
+        adrPct >= MIN_ADR_PCT &&
+        adrPct <= MAX_ADR_PCT
+      );
     });
 
     const rowsForHeatmap = preferred.length >= 24 ? preferred : snapshotRows;
@@ -95,7 +104,8 @@ export class HeatmapService {
       price: round2(row.price),
     }));
 
-    const updatedAt = snapshotRows[0]?.updatedAt?.toISOString() ?? new Date().toISOString();
+    const updatedAt =
+      snapshotRows[0]?.updatedAt?.toISOString() ?? new Date().toISOString();
 
     this.logger.debug(`Heatmap served from snapshots: ${cells.length} rows`);
 

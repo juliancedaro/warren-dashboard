@@ -12,6 +12,40 @@ import type {
 import { SP500_CONSTITUENTS } from './sp500-constituents';
 import { SymbolSnapshotService } from './symbol-snapshot.service';
 
+const PRIORITY_SYMBOLS = [
+  'AAPL',
+  'MSFT',
+  'AMZN',
+  'GOOGL',
+  'GOOG',
+  'META',
+  'TSLA',
+  'NVDA',
+  'BRK.B',
+  'BRK-B',
+  'JPM',
+  'JNJ',
+  'V',
+  'MA',
+  'UNH',
+  'XOM',
+  'KO',
+  'PEP',
+  'WMT',
+  'MCD',
+  'NFLX',
+  'DIS',
+];
+
+function shuffleArray<T>(items: T[]) {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 /** Universo: constituyentes S&P 500; solo entran filas con cap ≥ esto (Yahoo). */
 const MIN_MARKET_CAP_USD = 20_000_000_000;
 
@@ -226,10 +260,14 @@ function applyDashboardBaseFilters(
     ? Math.max(0, filters.minCap ?? 0)
     : 0;
   if (minCap > 0) out = out.filter((row) => row.marketCap >= minCap);
-  if (filters.country?.length) out = out.filter((row) => filters.country!.includes(row.country));
-  if (filters.indexTag?.length) out = out.filter((row) => filters.indexTag!.includes(row.indexTag));
-  if (filters.sector?.length) out = out.filter((row) => filters.sector!.includes(row.sector));
-  if (filters.industry?.length) out = out.filter((row) => filters.industry!.includes(row.industry));
+  if (filters.country?.length)
+    out = out.filter((row) => filters.country!.includes(row.country));
+  if (filters.indexTag?.length)
+    out = out.filter((row) => filters.indexTag!.includes(row.indexTag));
+  if (filters.sector?.length)
+    out = out.filter((row) => filters.sector!.includes(row.sector));
+  if (filters.industry?.length)
+    out = out.filter((row) => filters.industry!.includes(row.industry));
   if (filters.excludeNear52w) out = out.filter((row) => !row.near52wHigh);
   return out;
 }
@@ -718,7 +756,15 @@ export class DashboardService {
 
   private async buildCarousel(): Promise<CarouselResponse> {
     this.yahooMarket.ensureConfigured();
-    const symbols = DEFAULT_SYMBOLS.slice(0, CAROUSEL_SYMBOL_LIMIT);
+    const priority = shuffleArray(
+      PRIORITY_SYMBOLS.filter((s) => DEFAULT_SYMBOLS.includes(s)),
+    );
+
+    const rest = shuffleArray(
+      DEFAULT_SYMBOLS.filter((s) => !PRIORITY_SYMBOLS.includes(s)),
+    );
+
+    const symbols = [...priority, ...rest].slice(0, CAROUSEL_SYMBOL_LIMIT);
     const rows: CarouselRow[] = [];
     const skipped: string[] = [];
 

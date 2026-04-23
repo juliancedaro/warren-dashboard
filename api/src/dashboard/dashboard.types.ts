@@ -68,7 +68,6 @@ export type DashboardResponse = {
   skipped: string[];
 };
 
-
 export type DashboardBootstrapResponse = {
   hasSnapshots: boolean;
   isRefreshing: boolean;
@@ -77,7 +76,6 @@ export type DashboardBootstrapResponse = {
   rowCount: number;
   summary: DashboardSummary | null;
 };
-
 
 export type CarouselRow = {
   symbol: string;
@@ -95,7 +93,6 @@ export type CarouselResponse = {
   skipped: string[];
 };
 
-
 export type PaginatedResponse<T> = {
   items: T[];
   page: number;
@@ -104,7 +101,6 @@ export type PaginatedResponse<T> = {
   totalPages: number;
   updatedAt: string;
 };
-
 
 export type RowsResponse<T> = {
   items: T[];

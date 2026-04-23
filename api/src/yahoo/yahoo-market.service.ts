@@ -21,7 +21,9 @@ function normalizeYahooSymbol(symbol: string): string {
 function websiteToLogoUrl(website?: string | null): string | null {
   if (!website || typeof website !== 'string') return null;
   try {
-    const url = new URL(website.startsWith('http') ? website : `https://${website}`);
+    const url = new URL(
+      website.startsWith('http') ? website : `https://${website}`,
+    );
     const host = url.hostname.replace(/^www\./, '');
     if (!host) return null;
     return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128`;
@@ -57,17 +59,33 @@ export class YahooMarketService {
     suppressNotices: ['yahooSurvey', 'ripHistorical'],
   });
 
-  private readonly quoteCache = new Map<string, CacheEntry<YahooFundamentals | null>>();
-  private readonly marketCapCache = new Map<string, CacheEntry<number | null>>();
+  private readonly quoteCache = new Map<
+    string,
+    CacheEntry<YahooFundamentals | null>
+  >();
+  private readonly marketCapCache = new Map<
+    string,
+    CacheEntry<number | null>
+  >();
   private readonly candlesCache = new Map<string, CacheEntry<OhlcvCandles>>();
 
-  private readonly quoteInflight = new Map<string, Promise<YahooFundamentals | null>>();
-  private readonly marketCapInflight = new Map<string, Promise<number | null>>();
+  private readonly quoteInflight = new Map<
+    string,
+    Promise<YahooFundamentals | null>
+  >();
+  private readonly marketCapInflight = new Map<
+    string,
+    Promise<number | null>
+  >();
   private readonly candlesInflight = new Map<string, Promise<OhlcvCandles>>();
 
   ensureConfigured(): void {}
 
-  private getCached<T>(cache: Map<string, CacheEntry<T>>, key: string, ttlMs: number): T | null {
+  private getCached<T>(
+    cache: Map<string, CacheEntry<T>>,
+    key: string,
+    ttlMs: number,
+  ): T | null {
     const hit = cache.get(key);
     if (!hit) return null;
     if (Date.now() - hit.at >= ttlMs) {
@@ -77,7 +95,11 @@ export class YahooMarketService {
     return hit.value;
   }
 
-  private setCached<T>(cache: Map<string, CacheEntry<T>>, key: string, value: T): void {
+  private setCached<T>(
+    cache: Map<string, CacheEntry<T>>,
+    key: string,
+    value: T,
+  ): void {
     cache.set(key, { at: Date.now(), value });
     if (cache.size <= MAX_CACHE_ENTRIES) return;
     const oldestKey = cache.keys().next().value;
@@ -87,7 +109,11 @@ export class YahooMarketService {
   /** Market cap USD desde `quote` (fallback). */
   async marketCapUsd(symbol: string): Promise<number | null> {
     const sym = normalizeYahooSymbol(symbol);
-    const cached = this.getCached(this.marketCapCache, sym, MARKET_CAP_CACHE_MS);
+    const cached = this.getCached(
+      this.marketCapCache,
+      sym,
+      MARKET_CAP_CACHE_MS,
+    );
     if (cached !== null) {
       return cached;
     }
@@ -105,9 +131,8 @@ export class YahooMarketService {
           return null;
         }
         const mc = (row as { marketCap?: number }).marketCap;
-        const value = typeof mc === 'number' && Number.isFinite(mc) && mc > 0
-          ? mc
-          : null;
+        const value =
+          typeof mc === 'number' && Number.isFinite(mc) && mc > 0 ? mc : null;
         this.setCached(this.marketCapCache, sym, value);
         return value;
       } catch {
@@ -125,9 +150,7 @@ export class YahooMarketService {
   /**
    * Nombre, sector GICS, industria, cap, precio y var. % vía `quote` + `quoteSummary`.
    */
-  async quoteFundamentals(
-    symbol: string,
-  ): Promise<YahooFundamentals | null> {
+  async quoteFundamentals(symbol: string): Promise<YahooFundamentals | null> {
     const sym = normalizeYahooSymbol(symbol);
     const cached = this.getCached(this.quoteCache, sym, QUOTE_CACHE_MS);
     if (cached !== null) {
@@ -156,8 +179,10 @@ export class YahooMarketService {
         const name = String(r.shortName || r.longName || sym).trim() || sym;
         const sector = String(profile?.sector ?? 'Otros');
         const industry = String(profile?.industry ?? sector ?? 'Otros');
-        const website = typeof profile?.website === 'string' ? profile.website : null;
-        const country = typeof profile?.country === 'string' ? profile.country : null;
+        const website =
+          typeof profile?.website === 'string' ? profile.website : null;
+        const country =
+          typeof profile?.country === 'string' ? profile.country : null;
         const logoUrl = websiteToLogoUrl(website);
         let mc = num(r.marketCap);
         if (mc <= 0) {
@@ -219,7 +244,11 @@ export class YahooMarketService {
   ): Promise<OhlcvCandles> {
     const sym = normalizeYahooSymbol(symbol);
     const cacheKey = `${sym}:${startDate}:${endDate}`;
-    const cached = this.getCached(this.candlesCache, cacheKey, CANDLES_CACHE_MS);
+    const cached = this.getCached(
+      this.candlesCache,
+      cacheKey,
+      CANDLES_CACHE_MS,
+    );
     if (cached) {
       return cached;
     }
@@ -246,7 +275,15 @@ export class YahooMarketService {
           ? chartResult.quotes
           : [];
         if (quotes.length === 0) {
-          const empty = { s: 'no_data', t: [], o: [], h: [], l: [], c: [], v: [] } satisfies OhlcvCandles;
+          const empty = {
+            s: 'no_data',
+            t: [],
+            o: [],
+            h: [],
+            l: [],
+            c: [],
+            v: [],
+          } satisfies OhlcvCandles;
           this.setCached(this.candlesCache, cacheKey, empty);
           return empty;
         }
@@ -271,7 +308,15 @@ export class YahooMarketService {
           v.push(row.volume ?? 0);
         }
         if (t.length === 0) {
-          const empty = { s: 'no_data', t: [], o: [], h: [], l: [], c: [], v: [] } satisfies OhlcvCandles;
+          const empty = {
+            s: 'no_data',
+            t: [],
+            o: [],
+            h: [],
+            l: [],
+            c: [],
+            v: [],
+          } satisfies OhlcvCandles;
           this.setCached(this.candlesCache, cacheKey, empty);
           return empty;
         }

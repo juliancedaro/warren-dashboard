@@ -506,4 +506,4 @@ export const SP500_CONSTITUENTS: string[] = [
   'ZBH',
   'ZBRA',
   'ZTS',
-]
+];
