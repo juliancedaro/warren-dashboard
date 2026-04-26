@@ -1,14 +1,8 @@
 import { useMemo } from 'react'
-import type { DashboardRow, FetchJson } from '../types'
+import type { AdrRangeId, DashboardRow, FetchJson } from '../types'
 import { usePaginatedDashboardResource } from '../hooks/usePaginatedDashboardResource'
+import { adrQueryBounds } from '../utils/query'
 import { PaginationControls } from './PaginationControls'
-
-function adrBounds(range: 'all' | 'lt2' | '2to4' | 'gt4') {
-  if (range === 'lt2') return { adrMax: 2 }
-  if (range === '2to4') return { adrMin: 2, adrMax: 4 }
-  if (range === 'gt4') return { adrMin: 4 }
-  return {}
-}
 
 interface Props {
   enabled?: boolean
@@ -18,7 +12,7 @@ interface Props {
   sectors: string[]
   industries: string[]
   minCap: number
-  adrRange: 'all' | 'lt2' | '2to4' | 'gt4'
+  adrRange: AdrRangeId
   excludeNear52w: boolean
   scanRsMin: number
   setScanRsMin: (value: number) => void
@@ -47,7 +41,7 @@ export function ScannerSection(props: Props) {
   } = props
 
   const query = useMemo(
-    () => ({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap, excludeNear52w: excludeNear52w ? 1 : 0, rsMin: scanRsMin, volRelMax: scanVolRelMax, rsiMin: scanRsiMin, rsiMax: scanRsiMax, onlyUnusualVol: scanSoloVolInusual ? 1 : 0, ...adrBounds(adrRange), symbols: symbols ?? undefined }),
+    () => ({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap, excludeNear52w: excludeNear52w ? 1 : 0, rsMin: scanRsMin, volRelMax: scanVolRelMax, rsiMin: scanRsiMin, rsiMax: scanRsiMax, onlyUnusualVol: scanSoloVolInusual ? 1 : 0, ...adrQueryBounds(adrRange), symbols: symbols ?? undefined }),
     [countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, scanRsMin, scanVolRelMax, scanRsiMin, scanRsiMax, scanSoloVolInusual, symbols],
   )
 
@@ -66,7 +60,6 @@ export function ScannerSection(props: Props) {
         <label className="dash-field dash-field-range"><span>RSI máx · {scanRsiMax}</span><input type="range" min={0} max={100} value={scanRsiMax} onChange={(e) => setScanRsiMax(Number(e.target.value))} /></label>
         <label className="dash-check dash-scanner-check"><input type="checkbox" checked={scanSoloVolInusual} onChange={(e) => setScanSoloVolInusual(e.target.checked)} />Solo vol inusual</label>
       </div>
-      <PaginationControls page={page} total={total} totalPages={totalPages} pageSize={pageSize} pageSizeOptions={pageSizeOptions} onPageChange={setPage} onPageSizeChange={setPageSize} />
       <div className="dash-table-shell">
         <div className="dash-table-scroll dash-scanner-table-wrap dash-table-scroll-fixed">
           <table className={`dash-table dash-scanner-table ${loadingMore ? 'dash-table-dimmed' : ''}`}>
@@ -115,6 +108,7 @@ export function ScannerSection(props: Props) {
         </div>
         {loadingMore ? <div className="dash-loading-overlay">Cargando página…</div> : null}
       </div>
+      <PaginationControls page={page} total={total} totalPages={totalPages} pageSize={pageSize} pageSizeOptions={pageSizeOptions} onPageChange={setPage} onPageSizeChange={setPageSize} />
     </section>
   )
 }

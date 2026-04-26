@@ -1,8 +1,10 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { DASH_RECHARTS_MARGIN_RIGHT } from '../constants'
 import type { DashboardRow } from '../types'
 import { volDevBarColor } from '../utils/formatters'
+import type { RechartsTooltipProps } from '../utils/rechartsTooltip'
 
-function VolBarTooltip({ active, payload }: any) {
+function VolBarTooltip({ active, payload }: RechartsTooltipProps<DashboardRow>) {
   if (!active || !payload?.length) return null
   const point = payload[0].payload as DashboardRow
   return (
@@ -61,19 +63,30 @@ export function UnusualVolumeSection({
           </label>
         </div>
       </div>
-      <div className="dash-chart-wrap dash-chart-wrap-short">
+      <div className="dash-chart-wrap dash-chart-wrap-short dash-chart-recharts">
         {loading && rows.length === 0 ? (
           <p className="dash-muted">Cargando…</p>
         ) : rows.length === 0 ? (
           <p className="dash-muted">Ningún ticker supera el umbral con los filtros actuales.</p>
         ) : (
           <ResponsiveContainer width="100%" height="100%" minHeight={280}>
-            <BarChart data={rows} margin={{ top: 8, right: 8, left: 4, bottom: 36 }}>
+            <BarChart data={rows} margin={{ top: 8, right: DASH_RECHARTS_MARGIN_RIGHT, left: 4, bottom: 36 }}>
               <CartesianGrid stroke="var(--dash-grid)" strokeDasharray="4 6" vertical={false} />
-              <XAxis dataKey="symbol" tick={{ fill: 'var(--dash-muted)', fontSize: 10 }} stroke="var(--dash-border)" interval={xTickInterval} angle={-28} textAnchor="end" height={56} />
+              <XAxis
+                dataKey="symbol"
+                padding={{ left: 0.06, right: 0.14 }}
+                tick={{ fill: 'var(--dash-muted)', fontSize: 10 }}
+                stroke="var(--dash-border)"
+                interval={xTickInterval}
+                angle={-28}
+                textAnchor="end"
+                height={56}
+              />
               <YAxis tickFormatter={(v) => `+${v}%`} tick={{ fill: 'var(--dash-muted)', fontSize: 11 }} stroke="var(--dash-border)" domain={[0, 'auto']} label={{ value: 'Desvío %', angle: -90, position: 'insideLeft', fill: 'var(--dash-muted)', fontSize: 11 }} />
-              <Tooltip content={<VolBarTooltip />} />
-              <Bar dataKey="volDevPct5" radius={[6, 6, 0, 0]}>{rows.map((row) => <Cell key={row.symbol} fill={volDevBarColor(row.volDevPct5 ?? 0)} />)}</Bar>
+              <Tooltip cursor={false} content={<VolBarTooltip />} />
+              <Bar dataKey="volDevPct5" radius={[6, 6, 0, 0]}>
+                {rows.map((row) => <Cell key={row.symbol} fill={volDevBarColor(row.volDevPct5 ?? 0)} />)}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         )}

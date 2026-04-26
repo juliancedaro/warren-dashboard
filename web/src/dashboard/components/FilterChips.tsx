@@ -1,11 +1,9 @@
-import type { DashboardFiltersState, MinCapOption } from '../types'
-
-type RemovableKey = 'country'|'indexTag'|'sector'|'industry'|'minCapId'|'adrRange'|'excludeNear52w'
+import type { DashboardFilterChipKey, DashboardFilterChipRemove, DashboardFiltersState, MinCapOption } from '../types'
 
 interface Props {
   filters: DashboardFiltersState
   minCaps: MinCapOption[]
-  onRemove: (chip: { key: RemovableKey; value?: string }) => void
+  onRemove: (chip: DashboardFilterChipRemove) => void
   onClear: () => void
 }
 
@@ -17,7 +15,7 @@ function humanizeAdr(value: DashboardFiltersState['adrRange']) {
 }
 
 export function FilterChips({ filters, minCaps, onRemove, onClear }: Props) {
-  const chips: Array<{ key: RemovableKey; label: string; value?: string; id: string }> = []
+  const chips: Array<{ key: DashboardFilterChipKey; label: string; value?: string; id: string }> = []
 
   filters.countries.forEach((value) => chips.push({ key: 'country', value, label: `País: ${value}`, id: `country-${value}` }))
   filters.indexTags.forEach((value) => chips.push({ key: 'indexTag', value, label: `Índice: ${value}`, id: `index-${value}` }))

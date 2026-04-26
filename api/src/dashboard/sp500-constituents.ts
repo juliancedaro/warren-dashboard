@@ -71,7 +71,6 @@ export const SP500_CONSTITUENTS: string[] = [
   'BLK',
   'BMY',
   'BR',
-  'BRK.B',
   'BRO',
   'BSX',
   'BX',

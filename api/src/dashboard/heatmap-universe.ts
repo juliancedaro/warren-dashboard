@@ -1,12 +1,13 @@
 /**
- * Universo grande-cap / S&P (subset) para escanear el mapa de calor.
- * No es el índice completo: evita demasiadas llamadas a Yahoo en un refresh.
+ * Megacaps / nombres representativos del S&P 500 para el mapa de calor (estilo “índice amplio”).
+ * Orden de mercado lo resuelve la query por `marketCap` en snapshots; aquí solo acotamos el set.
  */
 export const HEATMAP_UNIVERSE: readonly string[] = [
   'AAPL',
   'MSFT',
   'NVDA',
   'GOOGL',
+  'GOOG',
   'AMZN',
   'META',
   'AVGO',
@@ -53,4 +54,28 @@ export const HEATMAP_UNIVERSE: readonly string[] = [
   'BLK',
   'RTX',
   'UNP',
+  'TXN',
+  'ISRG',
+  'GILD',
+  'PFE',
+  'NEE',
+  'DHR',
+  'ABT',
+  'PM',
+  'LMT',
+  'VRTX',
+  'MDT',
+  'COP',
+  'SLB',
+  'NKE',
+  'T',
+  'SCHW',
+  'ADP',
+  'CI',
+  'HUM',
+  'DUK',
+  'SO',
+  'PLD',
+  'EOG',
+  'CMCSA',
 ];

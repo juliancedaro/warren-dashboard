@@ -143,7 +143,6 @@ export function FilterBar({
   minCapId,
   minCaps,
   adrRange,
-  excludeNear52w,
   disabled,
   onCountriesChange,
   onIndexTagsChange,
@@ -151,7 +150,6 @@ export function FilterBar({
   onIndustriesChange,
   onMinCapChange,
   onAdrRangeChange,
-  onExcludeNear52wChange,
 }: Props) {
   return (
     <section className="dash-filters" aria-label="Filtros">
@@ -198,11 +196,6 @@ export function FilterBar({
             ))}
           </div>
         </div>
-
-        <label className="dash-check dash-check-inline">
-          <input type="checkbox" checked={excludeNear52w} onChange={(e) => onExcludeNear52wChange(e.target.checked)} />
-          Sin máx. 52S reciente
-        </label>
       </div>
     </section>
   )

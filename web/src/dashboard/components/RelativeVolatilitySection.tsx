@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { FetchJson, RelativeVolatilityRow } from '../types'
-import { buildQueryString } from '../utils/query'
-
-function adrBounds(range: 'all' | 'lt2' | '2to4' | 'gt4') {
-  if (range === 'lt2') return { adrMax: 2 }
-  if (range === '2to4') return { adrMin: 2, adrMax: 4 }
-  if (range === 'gt4') return { adrMin: 4 }
-  return {}
-}
+import { DASH_RECHARTS_MARGIN_RIGHT } from '../constants'
+import type { AdrRangeId, FetchJson, RelativeVolatilityRow } from '../types'
+import { adrQueryBounds, buildQueryString } from '../utils/query'
+import type { RechartsTooltipProps } from '../utils/rechartsTooltip'
 
 const VOL_REL_TOP_OPTS = [10, 20, 30, 50]
 const VOL_UNUSUAL_RATIO = 1
@@ -20,13 +15,13 @@ interface Props {
   sectors: string[]
   industries: string[]
   minCap: number
-  adrRange: 'all' | 'lt2' | '2to4' | 'gt4'
+  adrRange: AdrRangeId
   excludeNear52w: boolean
   enabled?: boolean
   symbols?: string[] | null
 }
 
-function VolRelTooltip({ active, payload }: any) {
+function VolRelTooltip({ active, payload }: RechartsTooltipProps<RelativeVolatilityRow>) {
   if (!active || !payload?.length) return null
   const point = payload[0].payload as RelativeVolatilityRow
   return <div className="dash-tooltip"><strong>{point.symbol}</strong><div>Vol 5d / Vol 1y: {point.vol5Vs1yRatio != null ? `${Number(point.vol5Vs1yRatio).toFixed(3)}x` : '—'}</div><div>RS: {point.rsScore.toFixed(1)}</div></div>
@@ -48,7 +43,7 @@ export function RelativeVolatilitySection({ fetchJson, countries, indexTags, sec
     let cancelled = false
     setLoading(true)
     setError(null)
-    const query = buildQueryString({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap: minCap > 0 ? minCap : undefined, excludeNear52w: excludeNear52w ? 1 : undefined, rsMin: volRelRsMin, limit: volRelTopN, sort: volRelSortDesc ? 'desc' : 'asc', ...adrBounds(adrRange), symbols: symbols ?? undefined })
+    const query = buildQueryString({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap: minCap > 0 ? minCap : undefined, excludeNear52w: excludeNear52w ? 1 : undefined, rsMin: volRelRsMin, limit: volRelTopN, sort: volRelSortDesc ? 'desc' : 'asc', ...adrQueryBounds(adrRange), symbols: symbols ?? undefined })
     fetchJson<{ items?: RelativeVolatilityRow[] }>(`/dashboard/volatility-relative?${query}`)
       .then((data) => { if (!cancelled) setRows(data.items ?? []) })
       .catch((e) => { if (!cancelled) { setError(e instanceof Error ? e.message : String(e)); setRows([]) } })
@@ -71,12 +66,14 @@ export function RelativeVolatilitySection({ fetchJson, countries, indexTags, sec
       <div className="dash-chart-wrap dash-chart-wrap-short">
         {loading ? <p className="dash-muted">Cargando…</p> : error ? <p className="dash-muted">{error}</p> : rows.length === 0 ? <p className="dash-muted">Sin ratio de volatilidad o filtros muy estrictos.</p> : (
           <ResponsiveContainer width="100%" height="100%" minHeight={280}>
-            <BarChart data={rows} margin={{ top: 8, right: 8, left: 4, bottom: 36 }}>
+            <BarChart data={rows} margin={{ top: 8, right: DASH_RECHARTS_MARGIN_RIGHT, left: 4, bottom: 36 }}>
               <CartesianGrid stroke="var(--dash-grid)" strokeDasharray="4 6" vertical={false} />
               <XAxis dataKey="symbol" tick={{ fill: 'var(--dash-muted)', fontSize: 10 }} stroke="var(--dash-border)" interval={xTickInterval} angle={-28} textAnchor="end" height={56} />
               <YAxis tickFormatter={(v: number) => `${v.toFixed(1)}x`} tick={{ fill: 'var(--dash-muted)', fontSize: 11 }} stroke="var(--dash-border)" domain={[0, 'auto']} label={{ value: 'Vol 5d / Vol 1y', angle: -90, position: 'insideLeft', fill: 'var(--dash-muted)', fontSize: 11 }} />
-              <Tooltip content={<VolRelTooltip />} />
-              <Bar dataKey="vol5Vs1yRatio" radius={[6, 6, 0, 0]}>{rows.map((row) => <Cell key={row.symbol} fill={row.vol5Vs1yRatio >= VOL_UNUSUAL_RATIO ? '#fb923c' : 'var(--dash-up)'} />)}</Bar>
+              <Tooltip cursor={false} content={<VolRelTooltip />} />
+              <Bar dataKey="vol5Vs1yRatio" radius={[6, 6, 0, 0]}>
+                {rows.map((row) => <Cell key={row.symbol} fill={row.vol5Vs1yRatio >= VOL_UNUSUAL_RATIO ? '#fb923c' : 'var(--dash-up)'} />)}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         )}

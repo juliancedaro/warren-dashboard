@@ -48,13 +48,17 @@ function TickerCarouselCard({ row }: { row: CarouselRow }) {
       <TickerCarouselIcon row={row} />
       <div className="dash-carousel-body">
         <div className="dash-carousel-topline">
-          <div className="dash-carousel-nameprice">
-            <span className="dash-carousel-sym">{row.symbol}</span>
-            <span className="dash-carousel-price">${formatPrice(row.price)}</span>
-          </div>
+          <span className="dash-carousel-sym">{row.symbol}</span>
           <span className="dash-carousel-pct" data-up={up ? '1' : '0'}>
-            <span className="dash-carousel-tri" aria-hidden="true">{up ? '▲' : '▼'}</span> {up ? '+' : ''}{row.changePct.toFixed(2)}%
+            <span className="dash-carousel-tri" aria-hidden="true">
+              {up ? '▲' : '▼'}
+            </span>
+            {up ? '+' : ''}
+            {row.changePct.toFixed(2)}%
           </span>
+        </div>
+        <div className="dash-carousel-midline">
+          <span className="dash-carousel-price">${formatPrice(row.price)}</span>
         </div>
         <span className="dash-carousel-meta">Último precio</span>
       </div>

@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { HeatmapCell, HeatmapResponse } from './heatmap.types';
+import { HEATMAP_UNIVERSE } from './heatmap-universe';
 
 const HEATMAP_CACHE_MS = 300_000;
 const MIN_CAP_USD = 50e9;
+/** Suelo más bajo cuando se filtra por universo S&P fijo (megacaps; evita excluir por corte 50B). */
+const UNIVERSE_MIN_CAP_USD = 1e9;
 const MAX_CAP_USD = 2e12;
 const MIN_ADR_PCT = 2;
 const MAX_ADR_PCT = 4;
@@ -52,15 +55,21 @@ export class HeatmapService {
       return this.emptyResponse();
     }
 
+    const useSp500Universe = !symbols?.length;
+    const symbolFilter = (
+      useSp500Universe ? [...HEATMAP_UNIVERSE] : symbols!
+    ).map((item) => item.toUpperCase());
+    const minCapUsd = useSp500Universe ? UNIVERSE_MIN_CAP_USD : MIN_CAP_USD;
+
     const snapshotRows = await this.prisma.symbolSnapshot.findMany({
       where: {
-        marketCap: { gte: MIN_CAP_USD, lte: MAX_CAP_USD },
-        ...(symbols?.length
-          ? { symbol: { in: symbols.map((item) => item.toUpperCase()) } }
-          : {}),
+        marketCap: { gte: minCapUsd, lte: MAX_CAP_USD },
+        symbol: { in: symbolFilter },
       },
       orderBy: [{ marketCap: 'desc' }, { symbol: 'asc' }],
-      take: HEATMAP_ROW_LIMIT,
+      take: useSp500Universe
+        ? Math.min(HEATMAP_ROW_LIMIT, symbolFilter.length)
+        : HEATMAP_ROW_LIMIT,
       select: {
         symbol: true,
         name: true,
@@ -89,7 +98,12 @@ export class HeatmapService {
       );
     });
 
-    const rowsForHeatmap = preferred.length >= 24 ? preferred : snapshotRows;
+    // Universo S&P fijo: priorizar nombres del índice; ADR 2–4% solo si enriquece sin vaciar.
+    const rowsForHeatmap = useSp500Universe
+      ? (preferred.length >= 12 ? preferred : snapshotRows)
+      : preferred.length >= 24
+        ? preferred
+        : snapshotRows;
 
     const cells: HeatmapCell[] = rowsForHeatmap.map((row) => ({
       symbol: row.symbol.toUpperCase(),
@@ -116,7 +130,7 @@ export class HeatmapService {
       matched: cells.length,
       skipped: [],
       filters: {
-        minCapUsd: MIN_CAP_USD,
+        minCapUsd: minCapUsd,
         maxCapUsd: MAX_CAP_USD,
         minAdrPct: MIN_ADR_PCT,
         maxAdrPct: MAX_ADR_PCT,

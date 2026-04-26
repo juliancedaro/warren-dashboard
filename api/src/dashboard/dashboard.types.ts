@@ -1,3 +1,7 @@
+import type { RsTrendRowDto } from '../shared/rs-trend-row.js';
+
+export type { RsTrendRowDto };
+
 export type TickerRow = {
   symbol: string;
   name: string;
@@ -9,23 +13,14 @@ export type TickerRow = {
   country: string;
   indexTag: string;
   adrPct: number;
-  /** Posición en el rango 52s (0–100), proxy de “fuerza” para el mapa */
   rsScore: number;
-  /** Δ RS vs cierre anterior (misma métrica RS 52S) */
   rsDelta1d: number | null;
-  /** Δ RS vs ~20 ruedas (aprox. 1 mes) */
   rsDelta20d: number | null;
-  /** RSI 14 períodos; null si no hay historia suficiente */
   rsi14: number | null;
-  /** Desvío % del volumen de hoy vs promedio móvil de 5 sesiones */
   volDevPct5: number;
-  /** Distancia % a la EMA20 */
   distEma20Pct: number | null;
-  /** Distancia % a la EMA50 */
   distEma50Pct: number | null;
-  /** Distancia % al EMA200 (positivo = sobre la media) */
   distEma200Pct: number | null;
-  /** Distancia al máximo 52s, ≤ 0 */
   dist52wPct: number;
   volRelative: number;
   unusualVol: boolean;
@@ -44,12 +39,10 @@ export type TickerRow = {
   rsRank2w: number | null;
   rsRank1w: number | null;
   rsRankNow: number | null;
-  /**
-   * Volatilidad realizada anualizada (últimos 5 retornos diarios) /
-   * vol. anualizada ~1 año (252 retornos). null si no hay historia.
-   */
   vol5Vs1yRatio: number | null;
 };
+
+export type RsTrendRowInTicker = Pick<TickerRow, keyof RsTrendRowDto>;
 
 export type DashboardSummary = {
   activeTickers: number;

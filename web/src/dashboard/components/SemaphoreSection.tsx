@@ -1,14 +1,8 @@
 import { useMemo } from 'react'
-import type { DashboardRow, FetchJson, OptionItem } from '../types'
+import type { AdrRangeId, DashboardRow, FetchJson, OptionItem } from '../types'
 import { usePaginatedDashboardResource } from '../hooks/usePaginatedDashboardResource'
+import { adrQueryBounds } from '../utils/query'
 import { PaginationControls } from './PaginationControls'
-
-function adrBounds(range: 'all' | 'lt2' | '2to4' | 'gt4') {
-  if (range === 'lt2') return { adrMax: 2 }
-  if (range === '2to4') return { adrMin: 2, adrMax: 4 }
-  if (range === 'gt4') return { adrMin: 4 }
-  return {}
-}
 
 function SemaphoreDot({ tone }: { tone: string }) {
   return <span className="dash-sem-dot" data-tone={tone} aria-hidden />
@@ -22,7 +16,7 @@ interface Props {
   sectors: string[]
   industries: string[]
   minCap: number
-  adrRange: 'all' | 'lt2' | '2to4' | 'gt4'
+  adrRange: AdrRangeId
   excludeNear52w: boolean
   sort: string
   setSort: (value: string) => void
@@ -35,7 +29,7 @@ interface Props {
 }
 
 export function SemaphoreSection({ fetchJson, countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, sort, setSort, unusualThresholdPct, metricToneRsi, metricToneRs, metricToneVolRel, sortOptions, symbols, enabled = true }: Props) {
-  const query = useMemo(() => ({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap, excludeNear52w: excludeNear52w ? 1 : 0, sort, ...adrBounds(adrRange), symbols: symbols ?? undefined }), [countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, sort, symbols])
+  const query = useMemo(() => ({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap, excludeNear52w: excludeNear52w ? 1 : 0, sort, ...adrQueryBounds(adrRange), symbols: symbols ?? undefined }), [countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, sort, symbols])
 
   const { items, loading, loadingMore, error, page, total, totalPages, pageSize, pageSizeOptions, setPage, setPageSize } = usePaginatedDashboardResource<DashboardRow>({ endpoint: '/dashboard/semaphore', fetchJson, query, enabled })
 
@@ -51,7 +45,6 @@ export function SemaphoreSection({ fetchJson, countries, indexTags, sectors, ind
           <select value={sort} onChange={(e) => setSort(e.target.value)}>{sortOptions.map((option) => <option key={String(option.id)} value={option.id}>{option.label}</option>)}</select>
         </label>
       </div>
-      <PaginationControls page={page} total={total} totalPages={totalPages} pageSize={pageSize} pageSizeOptions={pageSizeOptions} onPageChange={setPage} onPageSizeChange={setPageSize} />
       <div className="dash-table-shell">
         <div className={`dash-sem-grid dash-sem-grid-fixed ${loadingMore ? 'dash-grid-dimmed' : ''}`}>
           {items.length > 0 ? items.map((row) => {
@@ -88,6 +81,7 @@ export function SemaphoreSection({ fetchJson, countries, indexTags, sectors, ind
         </div>
         {loadingMore ? <div className="dash-loading-overlay">Cargando página…</div> : null}
       </div>
+      <PaginationControls page={page} total={total} totalPages={totalPages} pageSize={pageSize} pageSizeOptions={pageSizeOptions} onPageChange={setPage} onPageSizeChange={setPageSize} />
     </section>
   )
 }

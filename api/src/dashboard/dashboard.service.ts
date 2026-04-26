@@ -7,6 +7,7 @@ import type {
   DashboardResponse,
   PaginatedResponse,
   RowsResponse,
+  RsTrendRowDto,
   TickerRow,
 } from './dashboard.types';
 import { SP500_CONSTITUENTS } from './sp500-constituents';
@@ -21,8 +22,6 @@ const PRIORITY_SYMBOLS = [
   'META',
   'TSLA',
   'NVDA',
-  'BRK.B',
-  'BRK-B',
   'JPM',
   'JNJ',
   'V',
@@ -53,16 +52,27 @@ const DEFAULT_SYMBOLS = SP500_CONSTITUENTS;
 
 function normalizeCountry(country?: string | null): string {
   const value = String(country ?? '').trim();
-  if (!value) return 'US';
+  if (!value) return 'USA';
   const upper = value.toUpperCase();
+  if (upper === 'AR' || upper === 'ARGENTINA') return 'argentina';
+  if (['BR', 'BRAZIL', 'BRASIL'].includes(upper)) return 'brasil';
   if (
+    upper === 'US' ||
     upper === 'UNITED STATES' ||
     upper === 'UNITED STATES OF AMERICA' ||
     upper === 'USA'
   )
-    return 'US';
-  if (upper === 'UK' || upper === 'UNITED KINGDOM') return 'GB';
-  return upper;
+    return 'USA';
+  if (['UK', 'UNITED KINGDOM', 'GB'].includes(upper)) return 'GB';
+  if (
+    upper === 'CN' ||
+    upper === 'CHN' ||
+    upper === 'CHINA' ||
+    upper === "PEOPLE'S REPUBLIC OF CHINA" ||
+    upper === 'PRC'
+  )
+    return 'China';
+  return 'USA';
 }
 
 function normalizeIndustry(
@@ -103,6 +113,16 @@ const CAROUSEL_CACHE_MS = 60_000;
 const CAROUSEL_SYMBOL_LIMIT = 24;
 const CAROUSEL_RESULT_LIMIT = 16;
 const CAROUSEL_BATCH_SIZE = 8;
+
+/** Ticker normalizado (mayúsculas, `.` → `-`) para excluir del carrusel solamente. */
+function carouselSymbolKey(symbol: string): string {
+  return symbol.trim().toUpperCase().replace(/\./g, '-');
+}
+
+function isCarouselExcludedSymbol(symbol: string): boolean {
+  return carouselSymbolKey(symbol) === 'BRK-B';
+}
+
 const DASHBOARD_BATCH_SIZE = 12;
 const CANDLE_LOOKBACK_DAYS = 420;
 const BARS_52W = 252;
@@ -245,6 +265,21 @@ function normalizePageSize(pageSize?: number): number {
   return (PAGE_SIZE_OPTIONS as readonly number[]).includes(parsed)
     ? parsed
     : DEFAULT_PAGE_SIZE;
+}
+
+function rowMatchesAdrQuery(
+  adrPct: number | null | undefined,
+  adrMin?: number,
+  adrMax?: number,
+): boolean {
+  if (!Number.isFinite(adrMin) && !Number.isFinite(adrMax)) return true;
+  const a = Number(adrPct);
+  if (!Number.isFinite(a)) return false;
+  if (Number.isFinite(adrMin) && Number.isFinite(adrMax))
+    return a >= (adrMin as number) && a <= (adrMax as number);
+  if (Number.isFinite(adrMax) && (adrMax as number) === 2) return a < 2;
+  if (Number.isFinite(adrMin) && (adrMin as number) === 4) return a > 4;
+  return true;
 }
 
 function applyDashboardBaseFilters(
@@ -442,7 +477,7 @@ export class DashboardService {
     rsMin?: number;
     limit?: number;
     symbols?: string[];
-  }): Promise<RowsResponse<TickerRow>> {
+  }): Promise<RowsResponse<RsTrendRowDto>> {
     if (this.symbolSnapshots.isEnabled()) {
       const rows = await this.getRsTrendRowsFromDb(params);
       if (rows) return rows;
@@ -473,6 +508,8 @@ export class DashboardService {
     limit?: number;
     sort?: 'asc' | 'desc';
     symbols?: string[];
+    adrMin?: number;
+    adrMax?: number;
   }): Promise<RowsResponse<TickerRow>> {
     if (this.symbolSnapshots.isEnabled()) {
       const rows = await this.getVolatilityRelativeRowsFromDb(params);
@@ -481,6 +518,7 @@ export class DashboardService {
 
     const dashboard = await this.getDashboard(false);
     const filtered = applyDashboardBaseFilters(dashboard.rows, params)
+      .filter((r) => rowMatchesAdrQuery(r.adrPct, params.adrMin, params.adrMax))
       .filter(
         (r) =>
           r.rsScore >= (params.rsMin ?? 0) &&
@@ -637,7 +675,9 @@ export class DashboardService {
     };
   }
 
-  private emptyRowsResponse(updatedAt: string | null): RowsResponse<TickerRow> {
+  private emptyRowsResponse<T = TickerRow>(
+    updatedAt: string | null,
+  ): RowsResponse<T> {
     return { items: [], updatedAt: updatedAt ?? new Date().toISOString() };
   }
 
@@ -669,9 +709,10 @@ export class DashboardService {
     excludeNear52w?: boolean;
     rsMin?: number;
     limit?: number;
-  }): Promise<RowsResponse<TickerRow> | null> {
+  }): Promise<RowsResponse<RsTrendRowDto> | null> {
     const state = await this.ensureSnapshotAccess(false);
-    if (!state.hasSnapshots) return this.emptyRowsResponse(state.updatedAt);
+    if (!state.hasSnapshots)
+      return this.emptyRowsResponse<RsTrendRowDto>(state.updatedAt);
     return this.symbolSnapshots.getRsTrendRows(params);
   }
 
@@ -685,6 +726,9 @@ export class DashboardService {
     rsMin?: number;
     limit?: number;
     sort?: 'asc' | 'desc';
+    symbols?: string[];
+    adrMin?: number;
+    adrMax?: number;
   }): Promise<RowsResponse<TickerRow> | null> {
     const state = await this.ensureSnapshotAccess(false);
     if (!state.hasSnapshots) return this.emptyRowsResponse(state.updatedAt);
@@ -764,7 +808,9 @@ export class DashboardService {
       DEFAULT_SYMBOLS.filter((s) => !PRIORITY_SYMBOLS.includes(s)),
     );
 
-    const symbols = [...priority, ...rest].slice(0, CAROUSEL_SYMBOL_LIMIT);
+    const symbols = [...priority, ...rest]
+      .filter((s) => !isCarouselExcludedSymbol(s))
+      .slice(0, CAROUSEL_SYMBOL_LIMIT);
     const rows: CarouselRow[] = [];
     const skipped: string[] = [];
 
@@ -884,7 +930,7 @@ export class DashboardService {
     let name = symbol;
     let sector = '—';
     let industry = 'Otros';
-    let country = 'US';
+    let country = 'USA';
     let indexTag = deriveIndexTag(symbol);
     let marketCap = 0;
     let fundPrice = 0;
@@ -892,8 +938,8 @@ export class DashboardService {
     if (fund) {
       name = fund.name;
       sector = fund.sector;
-      industry = normalizeIndustry((fund as any).industry, fund.sector);
-      country = normalizeCountry((fund as any).country);
+      industry = normalizeIndustry(fund.industry, fund.sector);
+      country = normalizeCountry(fund.country);
       indexTag = deriveIndexTag(symbol);
       marketCap = fund.marketCapUsd;
       fundPrice = fund.regularMarketPrice;

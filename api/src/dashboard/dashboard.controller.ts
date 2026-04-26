@@ -20,6 +20,12 @@ function parseSymbols(input?: string): string[] | undefined {
   return parseList(input, 'upper');
 }
 
+function parseOptionalNum(v?: string): number | undefined {
+  if (v == null || v === '') return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 @Controller('dashboard')
 export class DashboardController {
   constructor(
@@ -91,6 +97,8 @@ export class DashboardController {
     @Query('limit') limit?: string,
     @Query('sort') sort?: string,
     @Query('symbols') symbols?: string,
+    @Query('adrMin') adrMin?: string,
+    @Query('adrMax') adrMax?: string,
   ) {
     return this.dashboard.getVolatilityRelative({
       country: parseList(country),
@@ -103,6 +111,8 @@ export class DashboardController {
       limit: Number(limit),
       sort: sort === 'desc' ? 'desc' : 'asc',
       symbols: parseSymbols(symbols),
+      adrMin: parseOptionalNum(adrMin),
+      adrMax: parseOptionalNum(adrMax),
     });
   }
 

@@ -37,8 +37,10 @@ export class YahooFinanceProbeService {
     const p1 = period1.toISOString().slice(0, 10);
     const p2 = period2.toISOString().slice(0, 10);
 
-    const quote = await this.yf.quote(sym);
-    const q = Array.isArray(quote) ? quote[0] : quote;
+    const quote = (await this.yf.quote(sym)) as unknown;
+    const q: unknown = Array.isArray(quote)
+      ? (quote as readonly unknown[])[0]
+      : quote;
 
     const chartResult = await this.yf.chart(sym, {
       period1: p1,

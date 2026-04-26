@@ -60,7 +60,7 @@ export function useLocalPersonalization() {
   function addSymbolToActiveWatchlist(symbol: string) {
     const normalized = symbol.trim().toUpperCase()
     if (!normalized || !activeWatchlistId || activeWatchlistId === 'all') return { ok: false, error: 'Elegí una watchlist primero.' }
-    if (!TICKER_RE.test(normalized)) return { ok: false, error: 'Ticker inválido. Usá símbolos tipo XOM, MSFT o BRK.B.' }
+    if (!TICKER_RE.test(normalized)) return { ok: false, error: 'Ticker inválido. Usá símbolos tipo XOM, MSFT.' }
     let added = false
     setWatchlists((prev) => prev.map((watchlist) => {
       if (watchlist.id !== activeWatchlistId) return watchlist

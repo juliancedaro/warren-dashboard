@@ -5,6 +5,7 @@ import type {
   DashboardSummary,
   PaginatedResponse,
   RowsResponse,
+  RsTrendRowDto,
   TickerRow,
 } from './dashboard.types';
 
@@ -24,6 +25,31 @@ function normalizePageSize(pageSize?: number): number {
     : DEFAULT_PAGE_SIZE;
 }
 
+function normalizeCountry(country?: string | null): string {
+  const value = String(country ?? '').trim();
+  if (!value) return 'USA';
+  const upper = value.toUpperCase();
+  if (upper === 'AR' || upper === 'ARGENTINA') return 'argentina';
+  if (upper === 'BR' || upper === 'BRAZIL' || upper === 'BRASIL') return 'brasil';
+  if (
+    upper === 'US' ||
+    upper === 'UNITED STATES' ||
+    upper === 'UNITED STATES OF AMERICA' ||
+    upper === 'USA'
+  )
+    return 'USA';
+  if (upper === 'UK' || upper === 'UNITED KINGDOM' || upper === 'GB') return 'GB';
+  if (
+    upper === 'CN' ||
+    upper === 'CHN' ||
+    upper === 'CHINA' ||
+    upper === "PEOPLE'S REPUBLIC OF CHINA" ||
+    upper === 'PRC'
+  )
+    return 'China';
+  return 'USA';
+}
+
 function toTickerRow(row: SymbolSnapshot): TickerRow {
   return {
     symbol: row.symbol,
@@ -33,9 +59,9 @@ function toTickerRow(row: SymbolSnapshot): TickerRow {
     marketCap: row.marketCap,
     sector: row.sector,
     industry: row.industry,
-    country: (row as any).country ?? 'US',
-    indexTag: (row as any).indexTag ?? 'SP500',
-    adrPct: (row as any).adrPct ?? 0,
+    country: normalizeCountry(row.country),
+    indexTag: row.indexTag ?? 'SP500',
+    adrPct: row.adrPct ?? 0,
     rsScore: row.rsScore,
     rsDelta1d: row.rsDelta1d,
     rsDelta20d: row.rsDelta20d,
@@ -267,6 +293,8 @@ export class SymbolSnapshotService {
     country?: string[];
     indexTag?: string[];
     industry?: string[];
+    adrMin?: number;
+    adrMax?: number;
   }): Prisma.SymbolSnapshotWhereInput {
     const where: Prisma.SymbolSnapshotWhereInput = {};
     if (filters.symbols?.length)
@@ -290,6 +318,13 @@ export class SymbolSnapshotService {
     if (!(lo <= 0 && hi >= 100)) where.rsi14 = { gte: lo, lte: hi };
     if (filters.onlyUnusualVol) {
       where.OR = [{ unusualVol: true }, { volDevPct5: { gte: 50 } }];
+    }
+    if (Number.isFinite(filters.adrMin) && Number.isFinite(filters.adrMax)) {
+      where.adrPct = { gte: filters.adrMin, lte: filters.adrMax };
+    } else if (Number.isFinite(filters.adrMax) && filters.adrMax === 2) {
+      where.adrPct = { lt: 2 };
+    } else if (Number.isFinite(filters.adrMin) && filters.adrMin === 4) {
+      where.adrPct = { gt: 4 };
     }
     return where;
   }
@@ -397,7 +432,7 @@ export class SymbolSnapshotService {
     rsMin?: number;
     limit?: number;
     symbols?: string[];
-  }): Promise<RowsResponse<TickerRow> | null> {
+  }): Promise<RowsResponse<RsTrendRowDto> | null> {
     if (!this.isEnabled()) return null;
     const limit = Math.max(1, Math.min(100, Number(params.limit) || 20));
     const where = this.buildWhere(params);
@@ -434,6 +469,8 @@ export class SymbolSnapshotService {
     limit?: number;
     symbols?: string[];
     sort?: 'asc' | 'desc';
+    adrMin?: number;
+    adrMax?: number;
   }): Promise<RowsResponse<TickerRow> | null> {
     if (!this.isEnabled()) return null;
     const limit = Math.max(1, Math.min(100, Number(params.limit) || 30));

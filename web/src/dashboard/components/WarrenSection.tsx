@@ -1,14 +1,8 @@
 import { useMemo } from 'react'
-import type { DashboardRow, FetchJson } from '../types'
+import type { AdrRangeId, DashboardRow, FetchJson } from '../types'
 import { usePaginatedDashboardResource } from '../hooks/usePaginatedDashboardResource'
+import { adrQueryBounds } from '../utils/query'
 import { PaginationControls } from './PaginationControls'
-
-function adrBounds(range: 'all' | 'lt2' | '2to4' | 'gt4') {
-  if (range === 'lt2') return { adrMax: 2 }
-  if (range === '2to4') return { adrMin: 2, adrMax: 4 }
-  if (range === 'gt4') return { adrMin: 4 }
-  return {}
-}
 
 function Dot({ ok }: { ok?: boolean | null }) {
   return <span className="dash-table-dot" data-ok={ok ? '1' : '0'} title={ok ? 'Sí' : 'No'} />
@@ -22,7 +16,7 @@ interface Props {
   sectors: string[]
   industries: string[]
   minCap: number
-  adrRange: 'all' | 'lt2' | '2to4' | 'gt4'
+  adrRange: AdrRangeId
   excludeNear52w: boolean
   symbols?: string[] | null
 }
@@ -36,7 +30,7 @@ export function WarrenSection({ fetchJson, countries, indexTags, sectors, indust
       industry: industries.length ? industries : undefined,
       minCap,
       excludeNear52w: excludeNear52w ? 1 : 0,
-      ...adrBounds(adrRange),
+      ...adrQueryBounds(adrRange),
       symbols: symbols ?? undefined,
     }),
     [countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, symbols],
@@ -51,7 +45,6 @@ export function WarrenSection({ fetchJson, countries, indexTags, sectors, indust
         <h2>Warren score</h2>
         <p className="dash-muted">Ordenado por score compuesto. Ahora carga desde snapshots paginados.</p>
       </div>
-      <PaginationControls page={page} total={total} totalPages={totalPages} pageSize={pageSize} pageSizeOptions={pageSizeOptions} onPageChange={setPage} onPageSizeChange={setPageSize} />
       <div className="dash-table-shell">
         <div className="dash-table-scroll dash-table-scroll-fixed">
           <table className={`dash-table ${loadingMore ? 'dash-table-dimmed' : ''}`}>
@@ -96,6 +89,7 @@ export function WarrenSection({ fetchJson, countries, indexTags, sectors, indust
         </div>
         {loadingMore ? <div className="dash-loading-overlay">Cargando página…</div> : null}
       </div>
+      <PaginationControls page={page} total={total} totalPages={totalPages} pageSize={pageSize} pageSizeOptions={pageSizeOptions} onPageChange={setPage} onPageSizeChange={setPageSize} />
       {updatedAt ? <p className="dash-foot">Actualizado {new Date(updatedAt).toLocaleString()}</p> : null}
     </section>
   )

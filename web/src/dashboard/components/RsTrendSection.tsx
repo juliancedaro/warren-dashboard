@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { FetchJson, RsTrendRow } from '../types'
-import { buildQueryString } from '../utils/query'
-
-function adrBounds(range: 'all' | 'lt2' | '2to4' | 'gt4') {
-  if (range === 'lt2') return { adrMax: 2 }
-  if (range === '2to4') return { adrMin: 2, adrMax: 4 }
-  if (range === 'gt4') return { adrMin: 4 }
-  return {}
-}
+import type { AdrRangeId, FetchJson, RsTrendRow } from '../types'
+import { adrQueryBounds, buildQueryString } from '../utils/query'
 
 const TREND_TICKER_OPTS = [10, 20, 50]
 
@@ -18,7 +11,7 @@ interface Props {
   sectors: string[]
   industries: string[]
   minCap: number
-  adrRange: 'all' | 'lt2' | '2to4' | 'gt4'
+  adrRange: AdrRangeId
   excludeNear52w: boolean
   enabled?: boolean
   symbols?: string[] | null
@@ -53,7 +46,7 @@ export function RsTrendSection({ fetchJson, countries, indexTags, sectors, indus
     let cancelled = false
     setLoading(true)
     setError(null)
-    const query = buildQueryString({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap: minCap > 0 ? minCap : undefined, excludeNear52w: excludeNear52w ? 1 : undefined, rsMin: trendRsMin, limit: trendTickerN, ...adrBounds(adrRange), symbols: symbols ?? undefined })
+    const query = buildQueryString({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap: minCap > 0 ? minCap : undefined, excludeNear52w: excludeNear52w ? 1 : undefined, rsMin: trendRsMin, limit: trendTickerN, ...adrQueryBounds(adrRange), symbols: symbols ?? undefined })
     fetchJson<{ items?: RsTrendRow[] }>(`/dashboard/rs-trend?${query}`)
       .then((data) => { if (!cancelled) setRows(data.items ?? []) })
       .catch((e) => { if (!cancelled) { setError(e instanceof Error ? e.message : String(e)); setRows([]) } })
@@ -75,7 +68,7 @@ export function RsTrendSection({ fetchJson, countries, indexTags, sectors, indus
         <table className="dash-rs-table">
           <thead><tr><th>Ticker</th><th>Hace 4 sem</th><th>Hace 3 sem</th><th>Hace 2 sem</th><th>Actual</th><th>Δ vs mes</th><th>Δ vs sem</th></tr></thead>
           <tbody>
-            {loading ? <tr><td colSpan={7} className="dash-muted">Cargando…</td></tr> : error ? <tr><td colSpan={7} className="dash-muted">{error}</td></tr> : rows.length === 0 ? <tr><td colSpan={7} className="dash-muted">Sin filas con los filtros actuales.</td></tr> : rows.map((row: any) => (
+            {loading ? <tr><td colSpan={7} className="dash-muted">Cargando…</td></tr> : error ? <tr><td colSpan={7} className="dash-muted">{error}</td></tr> : rows.length === 0 ? <tr><td colSpan={7} className="dash-muted">Sin filas con los filtros actuales.</td></tr> : rows.map((row) => (
               <tr key={row.symbol}>
                 <td className="dash-td-sym">{row.symbol}</td>
                 <td><RsRankBadge rank={row.rsRank4w ?? null} prevRank={null} /></td>

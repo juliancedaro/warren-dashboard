@@ -9,13 +9,7 @@ function num(v: unknown): number {
 
 function normalizeYahooSymbol(symbol: string): string {
   const sym = symbol.trim().toUpperCase();
-  const map: Record<string, string> = {
-    'BRK.B': 'BRK-B',
-    'BRK.A': 'BRK-A',
-    'BF.B': 'BF-B',
-    'BF.A': 'BF-A',
-  };
-  return map[sym] ?? sym;
+  return sym;
 }
 
 function websiteToLogoUrl(website?: string | null): string | null {
@@ -38,6 +32,46 @@ const CANDLES_CACHE_MS = 10 * 60_000;
 const MAX_CACHE_ENTRIES = 2000;
 
 type CacheEntry<T> = { at: number; value: T };
+
+type YahooChartQuoteRow = {
+  date?: Date | string | number;
+  adjclose?: number | null;
+  close?: number | null;
+  high?: number | null;
+  low?: number | null;
+  open?: number | null;
+  volume?: number | null;
+};
+
+type YahooChartArrayResult = {
+  quotes?: YahooChartQuoteRow[];
+};
+
+type YahooFinanceChartFn = (
+  symbol: string,
+  query: {
+    period1: string;
+    period2: string;
+    interval: '1d';
+    return: 'array';
+  },
+  opts?: { validateResult?: boolean },
+) => Promise<YahooChartArrayResult>;
+
+/** Subconjunto de `quoteSummary` usado en `quoteFundamentals`. */
+type YahooQuoteSummaryPick = {
+  summaryProfile?: {
+    sector?: string | null;
+    industry?: string | null;
+    website?: string | null;
+    country?: string | null;
+  };
+  summaryDetail?: { marketCap?: number | null };
+  price?: {
+    regularMarketPrice?: number | null;
+    regularMarketPreviousClose?: number | null;
+  };
+};
 
 export type YahooFundamentals = {
   name: string;
@@ -102,7 +136,8 @@ export class YahooMarketService {
   ): void {
     cache.set(key, { at: Date.now(), value });
     if (cache.size <= MAX_CACHE_ENTRIES) return;
-    const oldestKey = cache.keys().next().value;
+    const head = cache.keys().next();
+    const oldestKey = head.done ? undefined : head.value;
     if (oldestKey) cache.delete(oldestKey);
   }
 
@@ -124,8 +159,8 @@ export class YahooMarketService {
 
     const promise = (async () => {
       try {
-        const q = await this.yf.quote(sym);
-        const row = Array.isArray(q) ? q[0] : q;
+        const qRaw = (await this.yf.quote(sym)) as unknown;
+        const row: unknown = Array.isArray(qRaw) ? qRaw[0] : qRaw;
         if (!row || typeof row !== 'object') {
           this.setCached(this.marketCapCache, sym, null);
           return null;
@@ -163,20 +198,29 @@ export class YahooMarketService {
 
     const promise = (async () => {
       try {
-        const [q, sum] = await Promise.all([
+        const results = await Promise.all([
           this.yf.quote(sym),
           this.yf.quoteSummary(sym, {
             modules: ['summaryProfile', 'summaryDetail', 'price'],
           }),
         ]);
-        const row = Array.isArray(q) ? q[0] : q;
+        const qRaw = results[0] as unknown;
+        const sum = results[1] as unknown as YahooQuoteSummaryPick;
+        const row: unknown = Array.isArray(qRaw) ? qRaw[0] : qRaw;
         if (!row || typeof row !== 'object') {
           this.setCached(this.quoteCache, sym, null);
           return null;
         }
         const r = row as Record<string, unknown>;
         const profile = sum.summaryProfile;
-        const name = String(r.shortName || r.longName || sym).trim() || sym;
+        const shortN = r.shortName;
+        const longN = r.longName;
+        const name =
+          (typeof shortN === 'string' && shortN.trim()
+            ? shortN.trim()
+            : null) ??
+          (typeof longN === 'string' && longN.trim() ? longN.trim() : null) ??
+          sym;
         const sector = String(profile?.sector ?? 'Otros');
         const industry = String(profile?.industry ?? sector ?? 'Otros');
         const website =
@@ -190,17 +234,11 @@ export class YahooMarketService {
         }
         let last = num(r.regularMarketPrice);
         if (last <= 0) {
-          last = num(
-            (sum.price as { regularMarketPrice?: number } | undefined)
-              ?.regularMarketPrice,
-          );
+          last = num(sum.price?.regularMarketPrice);
         }
         let prev = num(r.regularMarketPreviousClose);
         if (prev <= 0) {
-          prev = num(
-            (sum.price as { regularMarketPreviousClose?: number } | undefined)
-              ?.regularMarketPreviousClose,
-          );
+          prev = num(sum.price?.regularMarketPreviousClose);
         }
         let changePct = 0;
         if (last > 0 && prev > 0) {
@@ -259,7 +297,8 @@ export class YahooMarketService {
 
     const promise = (async () => {
       try {
-        const chartResult = await (this.yf.chart as any)(
+        const chartFn = this.yf.chart.bind(this.yf) as YahooFinanceChartFn;
+        const chartResult = await chartFn(
           sym,
           {
             period1: startDate,

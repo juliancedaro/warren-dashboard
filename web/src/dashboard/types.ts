@@ -47,6 +47,24 @@ export interface CarouselRow {
   logoUrl?: string | null
 }
 
+export interface DashboardCarouselPayload {
+  rows: CarouselRow[]
+}
+
+export type DashboardFilterChipKey =
+  | 'country'
+  | 'indexTag'
+  | 'sector'
+  | 'industry'
+  | 'minCapId'
+  | 'adrRange'
+  | 'excludeNear52w'
+
+export interface DashboardFilterChipRemove {
+  key: DashboardFilterChipKey
+  value?: string
+}
+
 export interface DashboardTablePayload {
   rows: DashboardRow[]
 }
@@ -122,6 +140,12 @@ export interface TreemapGroup {
   children: Array<TreemapGroup | TreemapLeaf>
 }
 
+/** Un sector en la tira horizontal; el treemap solo usa hojas (top por cap). */
+export interface HeatmapSectorColumn {
+  name: string
+  leaves: TreemapLeaf[]
+}
+
 export interface MinCapOption {
   id: string
   label: string
@@ -154,7 +178,7 @@ export interface DashboardFiltersState {
 }
 
 export interface DashboardBootstrapState {
-  carouselPayload: { rows: CarouselRow[] } | null
+  carouselPayload: DashboardCarouselPayload | null
   carouselLoading: boolean
   payload: DashboardTablePayload | null
   loading: boolean
@@ -202,14 +226,7 @@ export interface SectionStatusProps {
   children?: ReactNode
 }
 
-export interface RsTrendRow {
-  symbol: string
-  rsRank4w?: number | null
-  rsRank3w?: number | null
-  rsRank2w?: number | null
-  rsRankNow?: number | null
-  rsScore: number
-}
+export type { RsTrendRowDto as RsTrendRow } from '../../../api/src/shared/rs-trend-row'
 
 export interface RelativeVolatilityRow {
   symbol: string

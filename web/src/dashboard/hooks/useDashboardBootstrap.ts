@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { DashboardBootstrapPayload, DashboardBootstrapState, DashboardTablePayload, HeatmapPayload } from '../types'
+import type {
+  DashboardBootstrapPayload,
+  DashboardBootstrapState,
+  DashboardCarouselPayload,
+  DashboardTablePayload,
+  HeatmapPayload,
+} from '../types'
 import { useApiFetch } from './useApiFetch'
 
 const SECONDARY_DELAY_MS = 250
@@ -7,7 +13,7 @@ const TABLE_DELAY_MS = 1600
 
 export function useDashboardBootstrap(): DashboardBootstrapState {
   const fetchJson = useApiFetch()
-  const [carouselPayload, setCarouselPayload] = useState<{ rows: any[] } | null>(null)
+  const [carouselPayload, setCarouselPayload] = useState<DashboardCarouselPayload | null>(null)
   const [carouselLoading, setCarouselLoading] = useState(true)
   const [payload, setPayload] = useState<DashboardTablePayload | null>(null)
   const [loading, setLoading] = useState(true)
@@ -41,7 +47,7 @@ export function useDashboardBootstrap(): DashboardBootstrapState {
 
     const [bootstrapResult, carouselResult] = await Promise.allSettled([
       fetchJson<DashboardBootstrapPayload>(`/dashboard/bootstrap${q}`),
-      fetchJson<{ rows: any[] }>(`/dashboard/carousel${q}`),
+      fetchJson<DashboardCarouselPayload>(`/dashboard/carousel${q}`),
     ])
 
     if (bootstrapResult.status === 'fulfilled') {

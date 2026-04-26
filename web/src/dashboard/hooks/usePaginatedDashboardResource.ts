@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FetchJson, PaginatedHookState, PaginatedResponse } from '../types'
-import { buildQueryString } from '../utils/query'
+import { buildQueryString, stableQueryKey } from '../utils/query'
 
 interface Params<T> {
   endpoint: string
@@ -28,11 +28,17 @@ export function usePaginatedDashboardResource<T>({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const queryString = useMemo(() => buildQueryString({ page, pageSize, ...query }), [page, pageSize, query])
+  const queryIdentityKey = stableQueryKey(query)
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- el objeto `query` se compara por valor vía `queryIdentityKey`
+  const queryString = useMemo(
+    () => buildQueryString({ page, pageSize, ...query }),
+    [page, pageSize, queryIdentityKey],
+  )
 
   useEffect(() => {
     setPage(1)
-  }, [query])
+  }, [queryIdentityKey])
 
   useEffect(() => {
     if (!enabled) {
