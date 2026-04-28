@@ -25,8 +25,16 @@ function summarizeFilter(saved: SavedFilter, watchlists: Watchlist[]) {
   }
   if (state.sectors?.length) parts.push(`Sectores: ${state.sectors.join(', ')}`)
   if (state.industries?.length) parts.push(`Industrias: ${state.industries.join(', ')}`)
-  if (state.minCapId && state.minCapId !== '0') parts.push(`Min cap: ${state.minCapId}`)
-  if (state.adrRange && state.adrRange !== 'all') parts.push(`ADR: ${state.adrRange}`)
+  if (state.minCapMin != null || state.minCapMax != null) {
+    const minCap = state.minCapMin ?? 0
+    const maxCap = state.minCapMax ?? 5e12
+    parts.push(`Cap: ${(minCap / 1e9).toFixed(0)}B–${(maxCap / 1e9).toFixed(0)}B`)
+  }
+  if (state.adrMin != null || state.adrMax != null) {
+    const adrMin = state.adrMin ?? 0
+    const adrMax = state.adrMax ?? 100
+    parts.push(`ADR: ${adrMin.toFixed(1)}%–${adrMax.toFixed(1)}%`)
+  }
   if (state.excludeNear52w) parts.push('Sin máx. 52S reciente')
   return parts.length ? parts.join(' · ') : 'Filtro general del dashboard'
 }

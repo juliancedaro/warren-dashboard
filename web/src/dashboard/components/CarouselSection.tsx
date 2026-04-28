@@ -43,8 +43,11 @@ function TickerCarouselIcon({ row }: { row: CarouselRow }) {
 
 function TickerCarouselCard({ row }: { row: CarouselRow }) {
   const up = row.changePct >= 0
+  const hasPrice = Number.isFinite(row.price) && row.price > 0
+  const deltaText = Number.isFinite(row.changePct) ? `${up ? '+' : ''}${row.changePct.toFixed(2)}%` : '—'
+  const priceText = hasPrice ? `$${formatPrice(row.price)}` : '—'
   return (
-    <article className="dash-carousel-card" data-up={up ? '1' : '0'} aria-label={`${row.symbol}, ${formatPrice(row.price)} USD, ${up ? 'sube' : 'baja'} ${Math.abs(row.changePct).toFixed(2)} por ciento`}>
+    <article className="dash-carousel-card" data-up={up ? '1' : '0'} aria-label={`${row.symbol}, ${priceText} USD`}>
       <TickerCarouselIcon row={row} />
       <div className="dash-carousel-body">
         <div className="dash-carousel-topline">
@@ -53,12 +56,11 @@ function TickerCarouselCard({ row }: { row: CarouselRow }) {
             <span className="dash-carousel-tri" aria-hidden="true">
               {up ? '▲' : '▼'}
             </span>
-            {up ? '+' : ''}
-            {row.changePct.toFixed(2)}%
+            {deltaText}
           </span>
         </div>
         <div className="dash-carousel-midline">
-          <span className="dash-carousel-price">${formatPrice(row.price)}</span>
+          <span className="dash-carousel-price">{priceText}</span>
         </div>
         <span className="dash-carousel-meta">Último precio</span>
       </div>
@@ -67,15 +69,45 @@ function TickerCarouselCard({ row }: { row: CarouselRow }) {
 }
 
 function TickerCarousel({ rows }: { rows: CarouselRow[] }) {
+  const bySymbol = new Map(rows.map((row) => [row.symbol.toUpperCase(), row] as const))
+  const fixedRows: CarouselRow[] = [
+    bySymbol.get('SPY') ?? {
+      symbol: 'SP500',
+      name: 'S&P 500',
+      price: 0,
+      changePct: 0,
+      website: 'https://www.spglobal.com',
+      logoUrl: null,
+    },
+    bySymbol.get('QQQ') ?? {
+      symbol: 'NASDAQ100',
+      name: 'Nasdaq-100',
+      price: 0,
+      changePct: 0,
+      website: 'https://www.nasdaq.com',
+      logoUrl: null,
+    },
+  ]
+  const fixedSymbols = new Set(fixedRows.map((row) => row.symbol.toUpperCase()))
+  const rotatingRows = rows.filter((row) => !fixedSymbols.has(row.symbol.toUpperCase()))
+
   const renderGroup = (id: string, ariaHidden: boolean) => (
     <div className="dash-carousel-group" key={id} {...(ariaHidden ? { 'aria-hidden': true } : {})}>
-      {rows.map((row) => <TickerCarouselCard key={`${row.symbol}-${id}`} row={row} />)}
+      {rotatingRows.map((row) => <TickerCarouselCard key={`${row.symbol}-${id}`} row={row} />)}
     </div>
   )
+
   return (
     <div className="dash-carousel" role="region" aria-label="Cotizaciones en carrusel">
-      <div className="dash-carousel-viewport">
-        <div className="dash-carousel-track">{renderGroup('a', false)}{renderGroup('b', true)}</div>
+      <div className="dash-carousel-inner">
+        <div className="dash-carousel-pinned" aria-label="Índices fijos">
+          {fixedRows.map((row) => <TickerCarouselCard key={`fixed-${row.symbol}`} row={row} />)}
+        </div>
+        <div className="dash-carousel-rotating" aria-label="Tickers rotativos">
+          <div className="dash-carousel-viewport">
+            <div className="dash-carousel-track">{renderGroup('a', false)}{renderGroup('b', true)}</div>
+          </div>
+        </div>
       </div>
     </div>
   )

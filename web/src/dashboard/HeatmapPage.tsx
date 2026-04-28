@@ -1,11 +1,11 @@
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ResponsiveContainer, Tooltip, Treemap } from 'recharts'
-import { useDashboardData } from './DashboardDataContext'
 import { HeatmapDetailTooltip } from './components/HeatmapDetailTooltip'
+import { useApiFetch } from './hooks/useApiFetch'
 import { formatUsd } from './utils/formatters'
 import { buildHeatmapTreemapTv } from './utils/heatmap'
-import type { TreemapGroup, TreemapLeaf } from './types'
+import type { HeatmapPayload, TreemapGroup, TreemapLeaf } from './types'
 
 type Node = TreemapGroup | TreemapLeaf
 
@@ -214,8 +214,30 @@ const LEGEND = [
 ]
 
 export function HeatmapPage() {
-  const { bootstrap } = useDashboardData()
-  const { heatmap, heatmapLoading: loading, heatmapErr: error } = bootstrap
+  const fetchJson = useApiFetch()
+  const [heatmap, setHeatmap] = useState<HeatmapPayload | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadHeatmap = useCallback(async (refresh = false) => {
+    const q = refresh ? '?refresh=1' : ''
+    setError(null)
+    setLoading(true)
+    try {
+      const body = await fetchJson<HeatmapPayload>(`/dashboard/heatmap${q}`)
+      setHeatmap(body)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(message)
+      setHeatmap(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchJson])
+
+  useEffect(() => {
+    void loadHeatmap(false)
+  }, [loadHeatmap])
 
   const sorted = useMemo(() => {
     const tree = buildHeatmapTreemapTv(heatmap?.cells ?? [])
@@ -249,7 +271,9 @@ export function HeatmapPage() {
             type="button"
             className="dash-btn"
             disabled={loading || !heatmap}
-            onClick={() => bootstrap.load(true)}
+            onClick={() => {
+              void loadHeatmap(true)
+            }}
           >
             Actualizar
           </button>

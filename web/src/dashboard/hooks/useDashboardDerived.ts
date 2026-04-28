@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import { DASH_COUNTRY_OPTIONS } from '../constants'
-import type { AdrRangeId, DashboardRow, DashboardSummary, HeatmapPayload, MinCapOption } from '../types'
-import { matchesAdrRange, matchesSelection } from '../utils/filters'
-import { buildHeatmapSectorStrip } from '../utils/heatmap'
+import type { DashboardRow, DashboardSummary } from '../types'
+import { matchesSelection } from '../utils/filters'
 
 function canonicalCountry(value?: string | null): string | null {
   const raw = String(value ?? '').trim()
@@ -31,48 +30,54 @@ function canonicalCountry(value?: string | null): string | null {
 
 export function useDashboardDerived(params: {
   payload: { rows: DashboardRow[] } | null
-  heatmap: HeatmapPayload | null
   countries: string[]
   indexTags: string[]
   sectors: string[]
   industries: string[]
-  minCapId: string
-  adrRange: AdrRangeId
+  minCapMin: number
+  minCapMax: number
+  adrMin: number
+  adrMax: number
   excludeNear52w: boolean
   unusualThresholdPct: number
   unusualTopN: number
-  minCapOptions: MinCapOption[]
   symbols?: string[] | null
 }) {
   const {
     payload,
-    heatmap,
     countries,
     indexTags,
     sectors,
     industries,
-    minCapId,
-    adrRange,
+    minCapMin,
+    minCapMax,
+    adrMin,
+    adrMax,
     excludeNear52w,
     unusualThresholdPct,
     unusualTopN,
-    minCapOptions,
     symbols,
   } = params
 
-  const minCap = minCapOptions.find((item) => item.id === minCapId)?.min ?? 0
+  const minCap = Number.isFinite(minCapMin) ? Math.max(0, minCapMin) : 0
+  const maxCap = Number.isFinite(minCapMax) ? Math.max(minCap, minCapMax) : Number.POSITIVE_INFINITY
+  const adrLo = Number.isFinite(adrMin) ? adrMin : 0
+  const adrHi = Number.isFinite(adrMax) ? Math.max(adrLo, adrMax) : Number.POSITIVE_INFINITY
   const symbolSet = useMemo(() => (symbols?.length ? new Set(symbols) : null), [symbols])
 
   const baseRows = useMemo(() => {
     let rows = payload?.rows ?? []
     if (symbolSet) rows = rows.filter((row) => symbolSet.has(row.symbol))
-    rows = rows.filter((row) => row.marketCap >= minCap)
+    rows = rows.filter((row) => row.marketCap >= minCap && row.marketCap <= maxCap)
     rows = rows.filter((row) => matchesSelection(canonicalCountry(row.country), countries))
     rows = rows.filter((row) => matchesSelection(row.indexTag, indexTags))
-    rows = rows.filter((row) => matchesAdrRange(row.adrPct, adrRange))
+    rows = rows.filter((row) => {
+      const adr = Number(row.adrPct ?? 0)
+      return adr >= adrLo && adr <= adrHi
+    })
     if (excludeNear52w) rows = rows.filter((row) => !row.near52wHigh)
     return rows
-  }, [payload, symbolSet, minCap, countries, indexTags, adrRange, excludeNear52w])
+  }, [payload, symbolSet, minCap, maxCap, countries, indexTags, adrLo, adrHi, excludeNear52w])
 
   const filteredRows = useMemo(() => {
     let rows = baseRows
@@ -120,7 +125,7 @@ export function useDashboardDerived(params: {
   const rsiRsData = useMemo(() => filteredRows.filter((row) => row.rsi14 != null), [filteredRows])
 
   const summary = useMemo<DashboardSummary | null>(() => {
-    if (!filteredRows.length) return null
+    if (!payload?.rows) return null
     return {
       activeTickers: filteredRows.length,
       aboveEma20: filteredRows.filter((row) => Boolean(row.aboveEma20)).length,
@@ -130,24 +135,7 @@ export function useDashboardDerived(params: {
       unusualVolToday: filteredRows.filter((row) => Boolean(row.unusualVol) || (row.volDevPct5 ?? 0) >= 50).length,
       qualityCandidates: filteredRows.filter((row) => (row.warrenScore ?? 0) >= 6).length,
     }
-  }, [filteredRows])
-
-  const heatmapCells = useMemo(() => {
-    let cells = heatmap?.cells ?? []
-    if (symbolSet) cells = cells.filter((cell) => symbolSet.has(cell.symbol))
-    cells = cells.filter((cell) => cell.marketCap >= minCap)
-    cells = cells.filter((cell) => matchesSelection(canonicalCountry(cell.country), countries))
-    cells = cells.filter((cell) => matchesSelection(cell.indexTag, indexTags))
-    cells = cells.filter((cell) => matchesAdrRange(cell.adrPct, adrRange))
-    cells = cells.filter((cell) => matchesSelection(cell.sector, sectors))
-    cells = cells.filter((cell) => matchesSelection(cell.industry, industries))
-    return cells
-  }, [heatmap, symbolSet, minCap, countries, indexTags, adrRange, sectors, industries])
-
-  const heatmapSectors = useMemo(
-    () => buildHeatmapSectorStrip(heatmapCells, sectors.length === 1 ? sectors[0] : 'all'),
-    [heatmapCells, sectors]
-  )
+  }, [payload, filteredRows])
 
   return {
     countries: countriesOptions,
@@ -159,7 +147,6 @@ export function useDashboardDerived(params: {
     unusualVolBars,
     rsiRsData,
     summary,
-    heatmapSectors,
     minCap,
   }
 }

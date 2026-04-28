@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
-import type { AdrRangeId, DashboardRow, FetchJson } from '../types'
+import type { DashboardRow, FetchJson } from '../types'
 import { usePaginatedDashboardResource } from '../hooks/usePaginatedDashboardResource'
-import { adrQueryBounds } from '../utils/query'
 import { PaginationControls } from './PaginationControls'
 
 function Dot({ ok }: { ok?: boolean | null }) {
@@ -16,12 +15,13 @@ interface Props {
   sectors: string[]
   industries: string[]
   minCap: number
-  adrRange: AdrRangeId
+  adrMin: number
+  adrMax: number
   excludeNear52w: boolean
   symbols?: string[] | null
 }
 
-export function WarrenSection({ fetchJson, countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, symbols, enabled = true }: Props) {
+export function WarrenSection({ fetchJson, countries, indexTags, sectors, industries, minCap, adrMin, adrMax, excludeNear52w, symbols, enabled = true }: Props) {
   const query = useMemo(
     () => ({
       country: countries.length ? countries : undefined,
@@ -30,10 +30,11 @@ export function WarrenSection({ fetchJson, countries, indexTags, sectors, indust
       industry: industries.length ? industries : undefined,
       minCap,
       excludeNear52w: excludeNear52w ? 1 : 0,
-      ...adrQueryBounds(adrRange),
+      adrMin,
+      adrMax,
       symbols: symbols ?? undefined,
     }),
-    [countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, symbols],
+    [countries, indexTags, sectors, industries, minCap, adrMin, adrMax, excludeNear52w, symbols],
   )
 
   const { items, loading, loadingMore, error, page, total, totalPages, pageSize, pageSizeOptions, setPage, setPageSize, updatedAt } =

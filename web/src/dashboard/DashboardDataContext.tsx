@@ -1,5 +1,4 @@
 import { createContext, useContext, type ReactNode } from 'react'
-import { DASH_MIN_CAPS } from './constants'
 import { useDashboardBootstrap } from './hooks/useDashboardBootstrap'
 import { useDashboardDerived } from './hooks/useDashboardDerived'
 import { useDashboardFilters } from './hooks/useDashboardFilters'
@@ -18,17 +17,18 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const bootstrap = useDashboardBootstrap()
   const derived = useDashboardDerived({
     payload: bootstrap.payload,
-    heatmap: bootstrap.heatmap,
     countries: filters.countries,
     indexTags: filters.indexTags,
     sectors: filters.sectors,
     industries: filters.industries,
-    minCapId: filters.minCapId,
-    adrRange: filters.adrRange,
+    minCapMin: filters.minCapMin,
+    minCapMax: filters.minCapMax,
+    adrMin: filters.adrMin,
+    adrMax: filters.adrMax,
     excludeNear52w: filters.excludeNear52w,
     unusualThresholdPct: filters.unusualThresholdPct,
     unusualTopN: filters.unusualTopN,
-    minCapOptions: DASH_MIN_CAPS,
+    symbols: filters.symbols,
   })
 
   const value: DashboardDataValue = {

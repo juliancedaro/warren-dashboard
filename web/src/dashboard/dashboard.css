@@ -98,7 +98,7 @@
   border: 1px solid var(--dash-border);
   background: linear-gradient(180deg, #1e212b 0%, #14161d 100%);
   color: var(--dash-text);
-  padding: 10px 18px;
+  padding: 5px 12px;
   border-radius: 10px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -132,7 +132,14 @@
 }
 
 .dash-filter-row-chips {
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px 16px;
+}
+
+.dash-filter-row-chips .dash-chip-group-wrap {
+  min-width: 0;
 }
 
 .dash-field {
@@ -179,6 +186,58 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.dash-range-apply-wrap {
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-self: end;
+}
+
+.dash-range-apply-btn {
+  height: 40px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  align-self: flex-start;
+  font-size: 0.80rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--dash-text);
+}
+
+@media (max-width: 1100px) {
+  .dash-filter-row-chips {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-range-apply-wrap {
+    justify-content: flex-start;
+  }
+}
+
+.dash-inline-create {
+  align-items: stretch;
+}
+
+.dash-inline-create .dash-btn {
+  height: 40px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.dash-inline-create .dash-input {
+  height: 40px;
+  box-sizing: border-box;
 }
 
 .dash-chip-btn {
@@ -255,6 +314,27 @@
     #000 calc(100% - 36px),
     transparent
   );
+}
+
+.dash-carousel-inner {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.dash-carousel-pinned {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  padding: 12px 0 12px 16px;
+  flex: 0 0 auto;
+}
+
+.dash-carousel-rotating {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
 }
 
 .dash-carousel-viewport {
@@ -478,6 +558,16 @@
     flex-wrap: wrap;
     justify-content: center;
     padding: 0 10px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dash-carousel-inner {
+    flex-direction: column;
+  }
+
+  .dash-carousel-pinned {
+    padding: 12px 12px 0;
   }
 }
 

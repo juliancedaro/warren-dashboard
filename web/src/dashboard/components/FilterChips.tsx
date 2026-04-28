@@ -1,31 +1,26 @@
-import type { DashboardFilterChipKey, DashboardFilterChipRemove, DashboardFiltersState, MinCapOption } from '../types'
+import type { DashboardFilterChipKey, DashboardFilterChipRemove, DashboardFiltersState } from '../types'
 
 interface Props {
   filters: DashboardFiltersState
-  minCaps: MinCapOption[]
   onRemove: (chip: DashboardFilterChipRemove) => void
   onClear: () => void
 }
 
-function humanizeAdr(value: DashboardFiltersState['adrRange']) {
-  if (value === 'lt2') return 'ADR < 2%'
-  if (value === '2to4') return 'ADR 2%–4%'
-  if (value === 'gt4') return 'ADR > 4%'
-  return ''
+function humanizeUsdBillions(value: number) {
+  return `${(value / 1e9).toFixed(0)}B`
 }
 
-export function FilterChips({ filters, minCaps, onRemove, onClear }: Props) {
+export function FilterChips({ filters, onRemove, onClear }: Props) {
   const chips: Array<{ key: DashboardFilterChipKey; label: string; value?: string; id: string }> = []
 
+  filters.symbols.forEach((value) => chips.push({ key: 'symbol', value, label: `Ticker: ${value}`, id: `symbol-${value}` }))
   filters.countries.forEach((value) => chips.push({ key: 'country', value, label: `País: ${value}`, id: `country-${value}` }))
-  filters.indexTags.forEach((value) => chips.push({ key: 'indexTag', value, label: `Índice: ${value}`, id: `index-${value}` }))
   filters.sectors.forEach((value) => chips.push({ key: 'sector', value, label: `Sector: ${value}`, id: `sector-${value}` }))
   filters.industries.forEach((value) => chips.push({ key: 'industry', value, label: `Industria: ${value}`, id: `industry-${value}` }))
-  if (filters.minCapId !== '0') {
-    const found = minCaps.find((item) => item.id === filters.minCapId)
-    chips.push({ key: 'minCapId', label: `Cap: ${found?.label ?? filters.minCapId}`, id: 'minCap' })
+  if (filters.minCapMin > 0 || filters.minCapMax < 5e12) {
+    chips.push({ key: 'minCapRange', label: `Cap: ${humanizeUsdBillions(filters.minCapMin)}–${humanizeUsdBillions(filters.minCapMax)}`, id: 'minCapRange' })
   }
-  if (filters.adrRange !== 'all') chips.push({ key: 'adrRange', label: humanizeAdr(filters.adrRange), id: 'adr' })
+  if (filters.adrMin > 0 || filters.adrMax < 100) chips.push({ key: 'adrRange', label: `ADR: ${filters.adrMin.toFixed(1)}%–${filters.adrMax.toFixed(1)}%`, id: 'adrRange' })
   if (filters.excludeNear52w) chips.push({ key: 'excludeNear52w', label: 'Sin máx. 52S', id: 'exclude52w' })
 
   if (!chips.length) return null

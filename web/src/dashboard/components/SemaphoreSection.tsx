@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
-import type { AdrRangeId, DashboardRow, FetchJson, OptionItem } from '../types'
+import type { DashboardRow, FetchJson, OptionItem } from '../types'
 import { usePaginatedDashboardResource } from '../hooks/usePaginatedDashboardResource'
-import { adrQueryBounds } from '../utils/query'
 import { PaginationControls } from './PaginationControls'
 
 function SemaphoreDot({ tone }: { tone: string }) {
@@ -16,7 +15,8 @@ interface Props {
   sectors: string[]
   industries: string[]
   minCap: number
-  adrRange: AdrRangeId
+  adrMin: number
+  adrMax: number
   excludeNear52w: boolean
   sort: string
   setSort: (value: string) => void
@@ -28,8 +28,8 @@ interface Props {
   symbols?: string[] | null
 }
 
-export function SemaphoreSection({ fetchJson, countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, sort, setSort, unusualThresholdPct, metricToneRsi, metricToneRs, metricToneVolRel, sortOptions, symbols, enabled = true }: Props) {
-  const query = useMemo(() => ({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap, excludeNear52w: excludeNear52w ? 1 : 0, sort, ...adrQueryBounds(adrRange), symbols: symbols ?? undefined }), [countries, indexTags, sectors, industries, minCap, adrRange, excludeNear52w, sort, symbols])
+export function SemaphoreSection({ fetchJson, countries, indexTags, sectors, industries, minCap, adrMin, adrMax, excludeNear52w, sort, setSort, unusualThresholdPct, metricToneRsi, metricToneRs, metricToneVolRel, sortOptions, symbols, enabled = true }: Props) {
+  const query = useMemo(() => ({ country: countries.length ? countries : undefined, indexTag: indexTags.length ? indexTags : undefined, sector: sectors.length ? sectors : undefined, industry: industries.length ? industries : undefined, minCap, adrMin, adrMax, excludeNear52w: excludeNear52w ? 1 : 0, sort, symbols: symbols ?? undefined }), [countries, indexTags, sectors, industries, minCap, adrMin, adrMax, excludeNear52w, sort, symbols])
 
   const { items, loading, loadingMore, error, page, total, totalPages, pageSize, pageSizeOptions, setPage, setPageSize } = usePaginatedDashboardResource<DashboardRow>({ endpoint: '/dashboard/semaphore', fetchJson, query, enabled })
 

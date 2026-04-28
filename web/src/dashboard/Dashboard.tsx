@@ -1,5 +1,4 @@
 import {
-  DASH_MIN_CAPS,
   DASH_SEMAPHORE_SORT_OPTS,
   DASH_TOP_OPTS,
   DASH_VOL_THRESHOLD_OPTS,
@@ -46,8 +45,8 @@ export default function Dashboard() {
           <button
             type="button"
             className="dash-btn"
-            title="Vuelve a pedir al API el tablero, el carrusel, el mapa de calor y actualiza las filas mostradas"
-            disabled={bootstrap.carouselLoading || bootstrap.heatmapLoading || bootstrap.loading}
+            title="Vuelve a pedir al API el tablero, el carrusel y actualiza las filas mostradas"
+            disabled={bootstrap.carouselLoading || bootstrap.loading}
             onClick={() => bootstrap.load(true)}
           >
             Actualizar
@@ -56,31 +55,32 @@ export default function Dashboard() {
       </header>
 
       <FilterBar
+        symbolsSelected={filters.symbols}
         countriesSelected={filters.countries}
         countries={derived.countries}
-        indexTagsSelected={filters.indexTags}
-        indexTags={derived.indexTags}
         sectorsSelected={filters.sectors}
         sectors={derived.sectors}
         industriesSelected={filters.industries}
         industries={derived.industries}
-        minCapId={filters.minCapId}
-        minCaps={DASH_MIN_CAPS}
-        adrRange={filters.adrRange}
+        minCapMin={filters.minCapMin}
+        minCapMax={filters.minCapMax}
+        adrMin={filters.adrMin}
+        adrMax={filters.adrMax}
         excludeNear52w={filters.excludeNear52w}
         disabled={!bootstrap.payload}
+        onSymbolsChange={filters.setSymbols}
         onCountriesChange={filters.setCountries}
-        onIndexTagsChange={filters.setIndexTags}
         onSectorsChange={filters.setSectors}
         onIndustriesChange={filters.setIndustries}
-        onMinCapChange={filters.setMinCapId}
-        onAdrRangeChange={filters.setAdrRange}
+        onMinCapMinChange={filters.setMinCapMin}
+        onMinCapMaxChange={filters.setMinCapMax}
+        onAdrMinChange={filters.setAdrMin}
+        onAdrMaxChange={filters.setAdrMax}
         onExcludeNear52wChange={filters.setExcludeNear52w}
       />
 
       <FilterChips
         filters={filters.currentFilters}
-        minCaps={DASH_MIN_CAPS}
         onRemove={filters.removeFilterChip}
         onClear={filters.resetFilters}
       />
@@ -96,11 +96,11 @@ export default function Dashboard() {
         </div>
       ) : null}
 
-      <KpiSummary summary={summary} loading={bootstrap.carouselLoading || bootstrap.heatmapLoading} />
+      <KpiSummary summary={summary} loading={bootstrap.carouselLoading} />
 
       <div className="dash-stack" aria-label="Mapa, Warren y momentum">
         <RelativeStrengthMapSection chartData={derived.chartData} loading={bootstrap.loading} />
-        <WarrenSection enabled={bootstrap.secondaryReady} fetchJson={bootstrap.fetchJson} countries={filters.countries} indexTags={filters.indexTags} sectors={filters.sectors} industries={filters.industries} minCap={minCap} adrRange={filters.adrRange} excludeNear52w={filters.excludeNear52w} />
+        <WarrenSection enabled={bootstrap.secondaryReady} fetchJson={bootstrap.fetchJson} countries={filters.countries} indexTags={filters.indexTags} sectors={filters.sectors} industries={filters.industries} minCap={minCap} adrMin={filters.adrMin} adrMax={filters.adrMax} excludeNear52w={filters.excludeNear52w} symbols={filters.symbols} />
         {/* Tendencia RS Score — desactivada temporalmente
         <RsTrendSection enabled={bootstrap.tertiaryReady} fetchJson={bootstrap.fetchJson} countries={filters.countries} indexTags={filters.indexTags} sectors={filters.sectors} industries={filters.industries} minCap={minCap} adrRange={filters.adrRange} excludeNear52w={filters.excludeNear52w} />
         Volatilidad relativa — desactivada temporalmente
@@ -116,7 +116,8 @@ export default function Dashboard() {
         sectors={filters.sectors}
         industries={filters.industries}
         minCap={minCap}
-        adrRange={filters.adrRange}
+        adrMin={filters.adrMin}
+        adrMax={filters.adrMax}
         excludeNear52w={filters.excludeNear52w}
         scanRsMin={filters.scanRsMin}
         setScanRsMin={filters.setScanRsMin}
@@ -132,6 +133,7 @@ export default function Dashboard() {
         formatPrice={formatPrice}
         formatRsDelta={formatRsDelta}
         formatDistPct={formatDistPct}
+        symbols={filters.symbols}
       />
 
       <div className="dash-stack" aria-label="Volumen inusual y RSI">
@@ -157,7 +159,8 @@ export default function Dashboard() {
         sectors={filters.sectors}
         industries={filters.industries}
         minCap={minCap}
-        adrRange={filters.adrRange}
+        adrMin={filters.adrMin}
+        adrMax={filters.adrMax}
         excludeNear52w={filters.excludeNear52w}
         sort={filters.semaphoreSort}
         setSort={filters.setSemaphoreSort}
@@ -166,6 +169,7 @@ export default function Dashboard() {
         metricToneRs={metricToneRs}
         metricToneVolRel={metricToneVolRel}
         sortOptions={DASH_SEMAPHORE_SORT_OPTS}
+        symbols={filters.symbols}
       />
     </div>
   )

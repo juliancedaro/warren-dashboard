@@ -4,7 +4,6 @@ import type {
   DashboardBootstrapState,
   DashboardCarouselPayload,
   DashboardTablePayload,
-  HeatmapPayload,
 } from '../types'
 import { useApiFetch } from './useApiFetch'
 
@@ -18,9 +17,6 @@ export function useDashboardBootstrap(): DashboardBootstrapState {
   const [payload, setPayload] = useState<DashboardTablePayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
-  const [heatmap, setHeatmap] = useState<HeatmapPayload | null>(null)
-  const [heatmapLoading, setHeatmapLoading] = useState(false)
-  const [heatmapErr, setHeatmapErr] = useState<string | null>(null)
   const [bootstrapMeta, setBootstrapMeta] = useState<DashboardBootstrapPayload | null>(null)
   const [summary, setSummary] = useState<DashboardBootstrapPayload['summary']>(null)
   const [secondaryReady, setSecondaryReady] = useState(false)
@@ -38,10 +34,8 @@ export function useDashboardBootstrap(): DashboardBootstrapState {
     const q = refresh ? '?refresh=1' : ''
     clearTimers()
     setErr(null)
-    setHeatmapErr(null)
     setCarouselLoading(true)
     setLoading(true)
-    setHeatmapLoading(false)
     setSecondaryReady(false)
     setTertiaryReady(false)
 
@@ -65,24 +59,11 @@ export function useDashboardBootstrap(): DashboardBootstrapState {
       setErr(message)
       setCarouselPayload(null)
       setPayload(null)
-      setHeatmap(null)
       setCarouselLoading(false)
       setLoading(false)
       return
     }
     setCarouselLoading(false)
-
-    setHeatmapLoading(true)
-    try {
-      const heatmapBody = await fetchJson<HeatmapPayload>(`/dashboard/heatmap${q}`)
-      setHeatmap(heatmapBody)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      setHeatmapErr(message)
-      setHeatmap(null)
-    } finally {
-      setHeatmapLoading(false)
-    }
 
     window.setTimeout(() => setSecondaryReady(true), SECONDARY_DELAY_MS)
     tableTimerRef.current = window.setTimeout(() => {
@@ -125,9 +106,6 @@ export function useDashboardBootstrap(): DashboardBootstrapState {
     payload,
     loading,
     err,
-    heatmap,
-    heatmapLoading,
-    heatmapErr,
     bootstrapMeta,
     summary,
     secondaryReady,

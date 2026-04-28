@@ -56,7 +56,8 @@ export type DashboardFilterChipKey =
   | 'indexTag'
   | 'sector'
   | 'industry'
-  | 'minCapId'
+  | 'symbol'
+  | 'minCapRange'
   | 'adrRange'
   | 'excludeNear52w'
 
@@ -160,12 +161,15 @@ export interface OptionItem<T extends string | number = string> {
 export type AdrRangeId = 'all' | 'lt2' | '2to4' | 'gt4'
 
 export interface DashboardFiltersState {
+  symbols: string[]
   countries: string[]
   indexTags: string[]
   sectors: string[]
   industries: string[]
-  minCapId: string
-  adrRange: AdrRangeId
+  minCapMin: number
+  minCapMax: number
+  adrMin: number
+  adrMax: number
   excludeNear52w: boolean
   unusualThresholdPct: number
   unusualTopN: number
@@ -183,9 +187,6 @@ export interface DashboardBootstrapState {
   payload: DashboardTablePayload | null
   loading: boolean
   err: string | null
-  heatmap: HeatmapPayload | null
-  heatmapLoading: boolean
-  heatmapErr: string | null
   bootstrapMeta: DashboardBootstrapPayload | null
   summary: DashboardSummary | null
   secondaryReady: boolean
