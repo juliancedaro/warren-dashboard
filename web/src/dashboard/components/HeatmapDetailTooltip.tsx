@@ -22,7 +22,12 @@ export function HeatmapDetailTooltip({ active, payload }: RechartsTooltipProps<u
     <div className="dash-tooltip dash-heatmap-tip heat-tv-tooltip">
       <div className="dash-heatmap-tip-head">
         {point.logoUrl ? (
-          <img className="dash-heatmap-tip-logo" src={point.logoUrl} alt="" loading="lazy" />
+          <img
+            className="dash-heatmap-tip-logo"
+            src={point.logoUrl}
+            alt={`Logo de ${point.fullName || point.symbol}`}
+            loading="lazy"
+          />
         ) : (
           <span className="dash-heatmap-tip-fallback">{heatLogoFallback(point.symbol)}</span>
         )}
